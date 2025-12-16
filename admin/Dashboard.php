@@ -1,3 +1,4 @@
+<?php require_once 'php/Dashboard_php.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
