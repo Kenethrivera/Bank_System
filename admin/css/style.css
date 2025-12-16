@@ -1,0 +1,92 @@
+body {
+      font-family: "Lucida Console", monospace;
+    }
+
+    /* Sidebar base */
+    #sidebar {
+      background: #3247be;
+      height: 100vmax;
+      color: white;
+      width: 60px;
+      /* collapsed width */
+      transition: width 0.3s ease;
+      overflow: hidden;
+    }
+
+    /* Expand sidebar on hover */
+    #sidebar:hover {
+      width: 220px;
+    }
+
+    /* Sidebar links */
+    #sidebar .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: white;
+      padding: 5px;
+      padding-bottom: 12px;
+      padding-top: 12px;
+      border-radius: 6px;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    #sidebar .nav-link:hover {
+      background: #4475fd;
+    }
+
+    /* Only show text on hover */
+    #sidebar .link-text {
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    #sidebar:hover .link-text {
+      opacity: 1;
+    }
+
+    /* Sidebar logo */
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px;
+    }
+
+    .sidebar-logo .logo-text {
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    #sidebar:hover .logo-text {
+      opacity: 1;
+    }
+
+    /* Cards */
+    .card-dashboard {
+      color: white;
+      text-align: center;
+      padding: 2rem 1rem;
+      border-radius: 0.5rem;
+    }
+
+    .Customers {
+      background-color: #3247be;
+    }
+
+    .Transactions {
+      background-color: #45946df8;
+    }
+
+    .Loan {
+      background-color: blueviolet;
+    }
+
+    main section {
+      display: none;
+    }
+
+    main section.active {
+      display: block;
+    }
