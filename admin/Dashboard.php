@@ -5,29 +5,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Bootstrap CSS only -->
   <link rel="stylesheet" href="css/style.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
   <title>Bank Dashboard</title>
 </head>
+
 <body>
   <div class="container-fluid">
     <div class="row">
-      <!-- Sidebar -->
       <nav id="sidebar" class="col-auto">
         <div class="sidebar-logo">
           <span class="material-symbols-outlined fs-2">account_balance</span>
           <div class="logo-text">
             <h5 class="mb-0">KennethBank</h5>
-            <small>Management System</small>
+            <small>Management&nbsp;System</small>
           </div>
         </div>
         <hr class="bg-light">
@@ -77,23 +74,16 @@
         </ul>
       </nav>
 
-      <!-- Main Content -->
       <main class="col py-4">
         <section id="dashboard">
           <div class="container py-4">
-
-            <!-- Page Header -->
             <div class="mb-4">
               <h1 class="fw-bold">Dashboard</h1>
               <p class="text-muted">
                 Welcome back! Here's what's happening with your bank today.
               </p>
             </div>
-
-            <!-- STAT CARDS -->
             <div class="row g-4 mb-4">
-
-              <!-- Total Customers -->
               <div class="col-md-6 col-lg-4">
                 <div class="card p-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
@@ -105,70 +95,37 @@
                   <h3 class="fw-bold"><?php echo $totalCustomers; ?></h3>
                 </div>
               </div>
-
-              <!-- Active Accounts -->
-              <!-- <div class="col-md-6 col-lg-3">
-      <div class="card p-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <div class="bg-success text-white rounded p-2">
-            <i class="bi bi-wallet2 fs-4"></i>
-          </div>
-          <span class="text-success small">
-            <i class="bi bi-arrow-up"></i> +8%
-          </span>
-        </div>
-        <small class="text-muted">Active Accounts</small>
-        <h3 class="fw-bold">85</h3>
-      </div>
-    </div> -->
-
-              <!-- Transactions Today -->
               <div class="col-md-6 col-lg-4">
                 <div class="card p-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <div class="bg-purple text-white rounded p-2" style="background:#6f42c1;">
                       <i class="bi bi-arrow-left-right fs-4"></i>
                     </div>
-                    <span class="text-success small">
-                      <i class="bi bi-arrow-up"></i> +23%
-                    </span>
                   </div>
                   <small class="text-muted">Transactions Today</small>
                   <h3 class="fw-bold">32</h3>
                 </div>
               </div>
-
-              <!-- Pending Loans -->
               <div class="col-md-6 col-lg-4">
                 <div class="card p-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <div class="bg-warning text-white rounded p-2">
                       <i class="bi bi-cash-stack fs-4"></i>
                     </div>
-                    <span class="text-danger small">
-                      <i class="bi bi-arrow-down"></i> -5%
-                    </span>
                   </div>
                   <small class="text-muted">Pending Loans</small>
                   <h3 class="fw-bold">6</h3>
                 </div>
               </div>
-
             </div>
-
-            <!-- CONTENT ROW -->
             <div class="row g-4">
-
-              <!-- Account Balances -->
               <div class="col-lg-6">
                 <div class="card p-4">
                   <h5 class="fw-semibold mb-3">Account Balances</h5>
-
                   <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted">Total Balance</span>
                     <span class="fs-4 fw-bold">$45,230.00</span>
                   </div>
-
                   <div class="progress mb-4" style="height:8px;">
                     <div class="progress-bar bg-success" style="width:75%"></div>
                   </div>
@@ -185,13 +142,9 @@
                   </div>
                 </div>
               </div>
-
-              <!-- Recent Transactions -->
               <div class="col-lg-6">
                 <div class="card p-4">
                   <h5 class="fw-semibold mb-3">Recent Transactions</h5>
-
-                  <!-- Transaction Item -->
                   <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                     <div class="d-flex align-items-center gap-3">
                       <div class="bg-success bg-opacity-25 rounded p-2">
@@ -207,8 +160,6 @@
                       <small class="text-muted">09/16/2025</small>
                     </div>
                   </div>
-
-                  <!-- Transaction Item -->
                   <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                     <div class="d-flex align-items-center gap-3">
                       <div class="bg-danger bg-opacity-25 rounded p-2">
@@ -225,7 +176,6 @@
                     </div>
                   </div>
 
-                  <!-- Transaction Item -->
                   <div class="d-flex justify-content-between align-items-center py-2">
                     <div class="d-flex align-items-center gap-3">
                       <div class="bg-primary bg-opacity-25 rounded p-2">
@@ -248,33 +198,169 @@
             </div>
 
           </div>
-
-          <!-- <h1 class="mb-4">Dashboard</h1>
-                    <div class="row g-3">
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <div class="card-dashboard Customers">
-                                <h4>Customer</h4>
-                            </div>
-                        </div>
-                        <div class="col-12 col-sm-6 col-lg-4">
-                            <div class="card-dashboard Transactions">
-                                <h4>Transactions Today</h4>
-                            </div>
-                        </div>
-                        <div class="col-12 col-xx1-6 col-lg-4">
-                            <div class="card-dashboard Loan">
-                                <h4>Pending Loan</h4>
-                            </div>
-                        </div>
-                    </div> -->
         </section>
         <section id="customers">
-          <h2>Customers</h2>
-          <!-- savings content -->
+          <div class="container-fluid">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div>
+                <h2 class="fw-bold mb-0">Account Management</h2>
+                <small class="text-muted">Manage savings and checking accounts</small>
+              </div>
+            </div>
+            <div class="card p-3 mb-4">
+              <div class="input-group">
+                <span class="input-group-text bg-white">
+                  <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control" placeholder="Search by account number or customer name...">
+              </div>
+            </div>
+
+            <div class="card p-3">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Account Number</th>
+                      <th>Customer</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Balance</th>
+                      <th class="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>ACC-10001</td>
+                      <td>Juan Dela Cruz</td>
+                      <td>JuanDelaCruz@gmail.com</td>
+                      <td>09512345678</td>
+                      <td class="fw-semibold text-success">$12,500.00</td>
+
+                      <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
+                          data-bs-target="#accountModal">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+
+
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
         </section>
+        <div class="modal fade" id="accountModal" tabindex="-1">
+          <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+
+              <div class="modal-header">
+                <h5 class="modal-title">Create / Edit Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+
+              <div class="modal-body">
+                <form class="row g-3">
+
+                  <div class="col-md-6">
+                    <label class="form-label">Account Number</label>
+                    <input type="text" class="form-control" required>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">First Name</label>
+                    <input type="text" class="form-control" step="0.01" required>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Middle Name</label>
+                    <input type="text" class="form-control" step="0.01" required>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" class="form-control" step="0.01" required>
+                  </div>
+
+
+                  <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <input type="text" class="form-control" step="0.01" required>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Phone</label>
+                    <input type="text" class="form-control" step="0.01" required>
+                  </div>
+                </form>
+              </div>
+
+              <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary">Save</button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
         <section id="transactions">
-          <h2>Transactions</h2>
-          <!-- savings content -->
+          <div class="container-fluid">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div>
+                <h2 class="fw-bold mb-0">Transaction Management</h2>
+                <small class="text-muted">View and manage all transactions</small>
+              </div>
+            </div>
+            <div class="card p-3 mb-4">
+              <div class="input-group">
+                <span class="input-group-text bg-white">
+                  <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control" placeholder="Search by account number or type.">
+              </div>
+            </div>
+
+            <div class="card p-3">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Date</th>
+                      <th>Account</th>
+                      <th>Type</th>
+                      <th>Amount</th>
+                      <th>Recipient</th>
+                      <th>Description</th>
+                      <th>Reference</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>2025-12-16</td>
+                      <td>ACC-10001</td>
+                      <td><span class="badge bg-success">Deposit</span></td>
+                      <td class="text-success">+$1,500</td>
+                      <td>ACC-10006</td>
+                      <td>Salary deposit</td>
+                      <td>1321639216</td>
+                    </tr>
+
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+
         </section>
         <section id="savings">
           <h2>Savings</h2>
@@ -303,7 +389,7 @@
 
 
 </body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="script/script.js"></script>
-</body>
 
 </html>
