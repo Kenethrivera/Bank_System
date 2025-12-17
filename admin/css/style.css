@@ -1,88 +1,144 @@
 body {
-      font-family: "Lucida Console", monospace;
-    }
+  font-family: "Lucida Console", monospace;
+}
 
-    /* Sidebar base */
-    #sidebar {
-      background: #3247be;
-      height: 735px;
-      color: white;
-      width: 60px;
-      /* collapsed width */
-      transition: width 0.3s ease;
-      overflow: hidden;
-    }
+/* Sidebar base */
+#sidebar {
+  background: #3247be;
+  height: 735px;
+  color: white;
+  width: 60px;
+  /* collapsed width */
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
 
-    /* Expand sidebar on hover */
-    #sidebar:hover {
-      width: 220px;
-    }
+/* Expand sidebar on hover */
+#sidebar:hover {
+  width: 220px;
+}
 
-    /* Sidebar links */
-    #sidebar .nav-link {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: white;
-      padding: 5px;
-      padding-bottom: 12px;
-      padding-top: 12px;
-      border-radius: 6px;
-      transition: background 0.2s;
-      white-space: nowrap;
-    }
+/* Sidebar links */
+#sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: white;
+  padding: 5px;
+  padding-bottom: 12px;
+  padding-top: 12px;
+  border-radius: 6px;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
 
-    #sidebar .nav-link:hover {
-      background: #4475fd;
-    }
-    #sidebar .link-text {
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
+#sidebar .nav-link:hover {
+  background: #4475fd;
+}
 
-    #sidebar:hover .link-text {
-      opacity: 1;
-    }
+#sidebar .link-text {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
 
-    .sidebar-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 5px;
-    }
+#sidebar:hover .link-text {
+  opacity: 1;
+}
 
-    .sidebar-logo .logo-text {
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px;
+}
 
-    #sidebar:hover .logo-text {
-      opacity: 1;
-    }
+.sidebar-logo .logo-text {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
 
-    .card-dashboard {
-      color: white;
-      text-align: center;
-      padding: 2rem 1rem;
-      border-radius: 0.5rem;
-    }
+#sidebar:hover .logo-text {
+  opacity: 1;
+}
 
-    .Customers {
-      background-color: #3247be;
-    }
+.card-dashboard {
+  color: white;
+  text-align: center;
+  padding: 2rem 1rem;
+  border-radius: 0.5rem;
+}
 
-    .Transactions {
-      background-color: #45946df8;
-    }
+.Customers {
+  background-color: #3247be;
+}
 
-    .Loan {
-      background-color: blueviolet;
-    }
+.Transactions {
+  background-color: #45946df8;
+}
 
-    main section {
-      display: none;
-    }
+.Loan {
+  background-color: blueviolet;
+}
 
-    main section.active {
-      display: block;
-    }
+main section {
+  display: none;
+}
+
+main section.active {
+  display: block;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.85em;
+  text-align: center;
+  min-width: 60px;
+}
+
+.status-approved {
+  background-color: #d4f7d4;
+  color: #2f6627;
+}
+
+.status-pending {
+  background-color: #fff8c4;
+  color: #a07c00;
+}
+
+.status-rejected {
+  background-color: #fcdada;
+  color: #a12b2b;
+}
+
+/* Base style for action buttons */
+.btn-action {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.8em;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-right: 5px;
+}
+
+.btn-accept {
+    background-color: #d4f7d4;
+    color: #2f6627;
+}
+
+.btn-accept:hover {
+    background-color: #bee8be; 
+}
+
+.btn-reject {
+    background-color: #fcdada;
+    color: #a12b2b;
+}
+
+.btn-reject:hover {
+    background-color: #f7c1c1;
+}

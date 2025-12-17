@@ -367,11 +367,105 @@
           <!-- savings content -->
           <!-- Kenneth -->
         </section>
-        <section id="loan">
-          <h2>Loan</h2>
-          <!-- savings content -->
-          <!-- Kenneth -->
+        
+        <section id="loan" class="flex-grow-2 p-2">
+          <div class="container-fluid">
+
+            <!-- Header -->
+            <div class="row mb-4 g-3">
+              <div class="col-12 col-md-6 col-lg-8">
+                <h3>Loan Management</h3>
+                <small class="text-muted">
+                  Manage loan applications and approvals
+                </small>
+              </div>
+              <div class="col-12 col-md-6 col-lg-4 d-flex align-items-center">
+                <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#loanModal">
+                  + New Loan Application
+                </button>
+              </div>
+            </div>
+
+            <!-- Search -->
+            <div class="card mb-3">
+              <div class="card-body">
+                <div class="input-group">
+                  <span class="input-group-text">🔍</span>
+                  <input type="text" class="form-control" placeholder="Search by customer name or loan type..." />
+                </div>
+              </div>
+            </div>
+
+            <!-- Loans Table -->
+            <div class="card">
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Customer</th>
+                        <th class="d-none d-sm-table-cell">Loan Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th class="d-none d-lg-table-cell">Application Date</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <?php
+                      if (mysqli_num_rows($loans_result) > 0) {
+                        while ($row = mysqli_fetch_assoc($loans_result)) {
+
+                          $formattedAmount = "$" . number_format($row['amount'], 2);
+
+                          // for styling the STATUS column
+                          $statusStyle = '';
+                          if ($row['Status'] === 'Approved') {
+                            $statusClass = 'status-pill status-approved';
+                          } elseif ($row['Status'] === 'Pending') {
+                            $statusClass = 'status-pill status-pending';
+                          } elseif ($row['Status'] === 'Rejected') {
+                            $statusClass = 'status-pill status-rejected';
+                          }
+
+                          echo "<tr> 
+                                  <td> {$row['customer_name']} </td>
+                                  <td> {$row['loan_type']} </td>
+                                  <td> <strong>{$formattedAmount}</strong> </td>
+                                  <td><span class='$statusClass'>{$row['Status']}</span></td>
+                                  <td> {$row['application_date']} </td>
+                                  <td>";
+
+                          if ($row['Status'] === 'Pending') {
+                            echo "<form method='Post' style='display:inline;'>
+                                    <input type='hidden' name='loan_id' value='{$row['loan_id']}'>
+                                    <button type='submit' name='action' value='Approved'class='btn-action btn-accept'>Accept</button>
+                                  </form>
+                                  <form method='post' style='display:inline;'>
+                                    <input type='hidden' name='loan_id' value='{$row['loan_id']}'>
+                                    <button type='submit' name='action' value='Rejected' class='btn-action btn-reject'>Reject</button>
+                                  </form>";
+                          } else {
+                            echo "-";
+                          }
+
+                          echo "</td> </tr>";
+
+                        }
+                      } else {
+                        echo "<tr><td colspan='4'>No Loans Found</td></tr>";
+                      }
+
+                      ?>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </section>
+
         <section id="faq">
           <h2>FAQS</h2>
           <!-- savings content -->
