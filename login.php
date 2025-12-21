@@ -21,20 +21,31 @@
           </div>
           <h1 class="h3 fw-bold text-dark">Maangas na Bank</h1>
           <p class="text-muted mb-0">Sign in to your account</p>
-        </div>
+        </div><?php 
+if (isset($_GET['error'])) {
 
-        <div id="errorMessage" class="alert alert-danger d-none" role="alert"></div>
+    if ($_GET['error'] === 'password') {
+        $msg = 'Invalid password';
+    } elseif ($_GET['error'] === 'notfound') {
+        $msg = 'Account not found';
+    } else {
+        $msg = 'Login failed';
+    }
 
-        <form id="loginForm" class="mb-3">
+    echo '<div class="alert alert-danger" role="alert">' . $msg . '</div>';
+}
+?>
+
+        <form id="loginForm" method="POST" class="mb-3" action="php/login.php">
           <div class="mb-3">
             <label for="emailInput" class="form-label">Email Address</label>
-            <input type="email" class="form-control" id="emailInput" placeholder="Enter your email" required>
+            <input type="email" name="email" class="form-control" id="emailInput" placeholder="Enter your email" required>
           </div>
           <div class="mb-3">
             <label for="passwordInput" class="form-label">Password</label>
-            <input type="password" class="form-control" id="passwordInput" placeholder="Enter your password" required>
+            <input type="password" name="password" class="form-control" id="passwordInput" placeholder="Enter your password" required>
           </div>
-          <button type="submit" class="btn btn-primary w-100">Sign In</button>
+          <button type="submit" name="submit" class="btn btn-primary w-100">Sign In</button>
         </form>
 
         <div class="text-center mb-3">
@@ -45,7 +56,8 @@
       </div>
     </div>
   </div>
-  <script src="script/login.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+ <!-- <script src="script/login.js"></script> -->
+ 
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

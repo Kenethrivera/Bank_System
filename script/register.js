@@ -1,67 +1,73 @@
-const registerForm = document.getElementById('registerForm');
-    const errorMessage = document.getElementById('errorMessage');
-    const profileInput = document.getElementById('profilePicture');
-    const profileWrapper = document.getElementById('profileWrapper');
-    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
-    const profileLabel = document.getElementById('profileLabel');
+var form = document.getElementById("registerForm");
+var fileInput = document.getElementById("profilePicture");
+var errorBox = document.getElementById("errorMessage");
+var preview = document.getElementById("previewWrapper");
 
-    let profilePictureData = null;
+var hasImage = false;
+var allowedExtensions = ['jpg', 'jpeg', 'png'];
 
-    profileInput.addEventListener('change', function(e){
-      const file = e.target.files[0];
-      if(file){
-        if(file.size > 5*1024*1024){
-          alert('Image size must be less than 5MB');
-          profileInput.value = '';
-          return;
-        }
-        if(!file.type.startsWith('image/')){
-          alert('Please upload an image file');
-          profileInput.value = '';
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = function(){
-          profilePictureData = reader.result;
-          profileWrapper.innerHTML = `
-            <img src="${profilePictureData}" alt="Profile">
-            <button type="button" id="removeProfileBtn" class="remove-picture-btn">&times;</button>
-          `;
-          document.getElementById('removeProfileBtn').addEventListener('click', function(){
-            profilePictureData = null;
-            profileWrapper.innerHTML = '';
-            profileWrapper.appendChild(uploadPlaceholder);
-            profileInput.value = '';
-            profileLabel.textContent = 'Upload Profile Picture';
-          });
-          profileLabel.textContent = 'Change Photo';
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+fileInput.onchange = function () {
+  var file = fileInput.files[0];
 
-    registerForm.addEventListener('submit', function(e){
-      e.preventDefault();
-      errorMessage.classList.add('d-none');
+  if (!file) return;
 
-      const formData = Object.fromEntries(new FormData(registerForm).entries());
-      const fullName = [formData.firstName, formData.middleName, formData.lastName].filter(Boolean).join(' ');
+  var fileExt = file.name.split('.').pop().toLowerCase();
 
-      if(!formData.firstName || !formData.lastName){
-        errorMessage.textContent = 'First name and last name are required';
-        errorMessage.classList.remove('d-none');
-        return;
-      }
-      if(formData.password !== formData.confirmPassword){
-        errorMessage.textContent = 'Passwords do not match';
-        errorMessage.classList.remove('d-none');
-        return;
-      }
-      if(formData.password.length < 6){
-        errorMessage.textContent = 'Password must be at least 6 characters';
-        errorMessage.classList.remove('d-none');
-        return;
-      }
+  if (!allowedExtensions.includes(fileExt)) {
+    showError("Only JPG and PNG files are allowed.");
+    resetInput();
+    return;
+  }
 
-      alert('Account created successfully!\nFull Name: '+fullName);
-    });
+  if (file.size > 5 * 1024 * 1024) {
+    showError("Image must be under 5MB.");
+    resetInput();
+    return;
+  }
+
+  var reader = new FileReader();
+  reader.onload = function () {
+    preview.innerHTML =
+      "<img src='" + reader.result + "' class='profile-preview' style='cursor:pointer' onclick='reselectImage()'>";
+    hasImage = true;
+    errorBox.classList.add("d-none");
+  };
+  reader.readAsDataURL(file);
+};
+
+function reselectImage() {
+  fileInput.click();
+}
+function resetInput() {
+  fileInput.value = "";        
+  hasImage = false;
+  resetPlaceholder();          
+}
+function resetPlaceholder() {
+  preview.innerHTML =
+    "<div class='upload-box mx-auto' onclick=\"document.getElementById('profilePicture').click()\">" +
+    "<i class='bi bi-camera fs-3 text-muted'></i>" +
+    "</div>";
+}
+
+form.onsubmit = function(e) {
+  errorBox.classList.add("d-none");
+
+  if (!hasImage) {
+    e.preventDefault();
+    showError("Profile picture is required");
+    resetPlaceholder();
+    return;
+  }
+
+  if (form.password.value !== form.confirmPassword.value) {
+    e.preventDefault();
+    showError("Passwords do not match");
+    return;
+  }
+};
+
+function showError(msg) {
+  errorBox.innerHTML = msg;
+  errorBox.classList.remove("d-none");
+}
