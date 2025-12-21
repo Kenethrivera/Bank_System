@@ -1,4 +1,5 @@
 <?php
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream:admin/php/Dashboard_php.php
 $conn = mysqli_connect('localhost', 'root', '', 'schooldb');
 if (!$conn) {
@@ -8,6 +9,8 @@ $result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM Users_account_tbl")
 $row = mysqli_fetch_assoc($result);
 $totalCustomers = $row['total'];
 =======
+=======
+>>>>>>> Stashed changes
 $conn = mysqli_connect('localhost', 'root', '', 'bank_db');
 if (!$conn) {
     die('Connection Error: ' . mysqli_connect_error());
@@ -51,5 +54,8 @@ if (!$loans_result) {
     die("Loans Query Error: " . mysqli_error($conn));
 }
 
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes:admin/php/Dashboard.php
+=======
+>>>>>>> Stashed changes
 ?>
