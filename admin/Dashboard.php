@@ -250,20 +250,29 @@
                         $fullNameEsc = htmlspecialchars($fullName, ENT_QUOTES);
                         $emailEsc = htmlspecialchars($row['Email'], ENT_QUOTES);
                         $phoneEsc = htmlspecialchars($row['Phone'], ENT_QUOTES);
-                        $dobEsc = htmlspecialchars($row['birthdate'], ENT_QUOTES);
+                        $dobEsc = htmlspecialchars($row['Birthdate'], ENT_QUOTES);
                         $addressEsc = htmlspecialchars($row['Address'], ENT_QUOTES);
                         $statusEsc = htmlspecialchars($row['Status'], ENT_QUOTES);
                         $ImgEsc = htmlspecialchars($row['Img'], ENT_QUOTES);
+                        if ($row['Status'] === 'Approved') {
+                          $balanceDisplay = '₱ ' . number_format($row['Balance'], 2);
+                          $balanceClass = 'fw-semibold text-success';
+                        } else {
+                          $balanceDisplay = '— — — — —';
+                          $balanceClass = 'text-muted';
+                        }
+
                         echo "<tr data-account='{$accountNumber}' data-name='{$fullNameEsc}' >
                                   <td>{$accountNumber}</td>
                                   <td>{$fullNameEsc}</td>
                                   <td>{$emailEsc}</td>
-                                  <td class='fw-semibold text-success'>$-------</td>
+                                  <td class='{$balanceClass}'>{$balanceDisplay}</td>
                                   <td><span class='{$statusClass}'>{$statusEsc}</span></td>
                                   <td class='text-center'>
                                       <button type='button' class='btn btn-sm btn-outline-info me-1 view-profile-btn' 
                                               data-bs-toggle='modal' 
                                               data-bs-target='#profileModal'
+                                              data-id='{$row['ID']}'
                                               data-name='{$fullNameEsc}'
                                               data-email='{$emailEsc}'
                                               data-phone='{$phoneEsc}'
@@ -271,11 +280,15 @@
                                               data-address='{$addressEsc}'
                                               data-status='{$statusEsc}'
                                               data-img='{$ImgEsc}'>
-                                          <i class='bi bi-eye'></i>
+                                              
+                                              <i class='bi bi-eye'></i>
                                       </button>
-                                      <button class='btn btn-sm btn-outline-danger'>
+                                       <form method='POST' onsubmit=\"return confirm('Are you sure you want to delete this account? This action cannot be undone.');\" style='display:inline;'>
+                                        <input type='hidden' name='delete_account_id' value='{$row['ID']}'>
+                                        <button type='submit' class='btn btn-sm btn-outline-danger'>
                                           <i class='bi bi-trash'></i>
-                                      </button>
+                                        </button>
+                                      </form>
                                   </td>
                                 </tr>";
                       }
@@ -290,56 +303,80 @@
             </div>
           </div>
         </section>
-        <div class="modal fade" id="accountModal" tabindex="-1">
-          <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
+        <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 overflow-hidden shadow-lg">
 
-              <div class="modal-header">
-                <h5 class="modal-title">Create / Edit Account</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              <div class="position-relative">
+                <div class="bg-primary bg-gradient" style="height: 130px;"></div>
+
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"
+                  aria-label="Close"></button>
               </div>
 
-              <div class="modal-body">
-                <form class="row g-3">
+              <div class="modal-body px-4 pb-4">
 
-                  <div class="col-md-6">
-                    <label class="form-label">Account Number</label>
-                    <input type="text" class="form-control" required>
+                <div class="d-flex justify-content-center justify-content-md-start">
+                  <div class="position-relative" style="margin-top:-70px;">
+                    <img alt="Profile" class="rounded-circle border border-4 border-white shadow modalImg" width="130"
+                      height="130">
+
+                    <span
+                      class="position-absolute bottom-0 end-0 bg-success rounded-circle border border-2 border-white"
+                      style="width:16px;height:16px;"></span>
+                  </div>
+                </div>
+                <div class="mt-3 text-center text-md-start">
+                  <h4 id="modalName" class="fw-bold mb-0">John Doe</h4>
+                </div>
+                <div class="mt-4">
+
+                  <div class="d-flex gap-3 mb-3">
+                    <i class="bi bi-envelope text-muted fs-5"></i>
+                    <div>
+                      <div class="text-uppercase small text-muted fw-semibold">Email Address</div>
+                      <div class="fw-medium" id="modalEmail">fsafds</div>
+                    </div>
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label">First Name</label>
-                    <input type="text" class="form-control" step="0.01" required>
+                  <div class="d-flex gap-3 mb-3">
+                    <i class="bi bi-telephone text-muted fs-5"></i>
+                    <div>
+                      <div class="text-uppercase small text-muted fw-semibold">Phone Number</div>
+                      <div class="fw-medium" id="modalPhone"></div>
+                    </div>
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label">Middle Name</label>
-                    <input type="text" class="form-control" step="0.01" required>
+                  <div class="d-flex gap-3 mb-3">
+                    <i class="bi bi-calendar-event text-muted fs-5"></i>
+                    <div>
+                      <div class="text-uppercase small text-muted fw-semibold">Date of Birth</div>
+                      <div class="fw-medium" id="modalDOB"></div>
+                    </div>
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label">Last Name</label>
-                    <input type="text" class="form-control" step="0.01" required>
+                  <div class="d-flex gap-3 mb-3">
+                    <i class="bi bi-geo-alt text-muted fs-5"></i>
+                    <div>
+                      <div class="text-uppercase small text-muted fw-semibold">Address</div>
+                      <div class="fw-medium" id="modalAddress"></div>
+                    </div>
                   </div>
 
+                </div>
+                <form method="POST">
+                  <input type="hidden" name="account_id" id="modalAccountId">
 
-                  <div class="col-md-6">
-                    <label class="form-label">Email</label>
-                    <input type="text" class="form-control" step="0.01" required>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label">Phone</label>
-                    <input type="text" class="form-control" step="0.01" required>
+                  <div class="d-flex flex-column flex-md-row gap-3 pt-4 border-top mt-4">
+                    <button type="submit" name="update_status" value="Rejected" class="btn btn-outline-danger w-100">
+                      <i class="bi bi-x-circle me-2"></i>Reject
+                    </button>
+                    <button type="submit" name="update_status" value="Approved" class="btn btn-success w-100">
+                      <i class="bi bi-check-circle me-2"></i>Approve
+                    </button>
                   </div>
                 </form>
               </div>
-
-              <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-primary">Save</button>
-              </div>
-
             </div>
           </div>
         </div>

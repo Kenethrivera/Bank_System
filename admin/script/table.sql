@@ -12,19 +12,21 @@ CREATE TABLE loans (
 INSERT INTO `loans`(`loan_id`, `customer_name`, `loan_type`, `amount`, `Status`, `application_date`) VALUES (6,'james','loan','2000','Pending','2026-01-01'), (7,'escueta','loan','2000','Pending','2026-01-01'), (8,'rivera','loan','2000','Pending','2026-01-01');
 
 CREATE TABLE user_accounts (
-ID Int AUTO_INCREMENT PRIMARY KEY,
-    FirstName Varchar(150) not null,
-    MiddleName Varchar(150),
-    LastName Varchar(150) not null,
-    Email Varchar(150) UNIQUE key,
-    Phone Varchar(15) UNIQUE key,
-    Address Varchar(150) not null,
-	Birthday Date not null,
-    Password Varchar(150) not null,
-    Img Varchar(150) not null,
-    Role Varchar(10) DEFAULT 'User',
-    Status Varchar(10) DEFAULT 'Pending'
+    ID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(150) NOT NULL,
+    MiddleName VARCHAR(150),
+    LastName VARCHAR(150) NOT NULL,
+    Email VARCHAR(150) UNIQUE,
+    Phone VARCHAR(15) UNIQUE,
+    Address VARCHAR(150) NOT NULL,
+    Birthdate DATE NOT NULL,
+    Password VARCHAR(255) NOT NULL,
+    Img VARCHAR(150) NOT NULL,
+    Role VARCHAR(10) DEFAULT 'User',
+    Status VARCHAR(10) DEFAULT 'Pending',
+    Balance DECIMAL(10,2) DEFAULT 0.00
 );
+
 
 INSERT INTO user_accounts  (FirstName, MiddleName, LastName, Email, Phone, Address, Birthday, Password) VALUES
 ('Abdul', 'Pacalundo', 'Disomimba', 'malik@test.com', '0912345678', 'Quezon City, Philippines', '1998-05-12', 'malik12345');

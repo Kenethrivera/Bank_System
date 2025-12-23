@@ -12,25 +12,32 @@ if (!$conn) {
 }
 
 if (isset($_POST['submit'])) {
-    $firstName  = trim(mysqli_real_escape_string($conn, $_POST['firstName']));
+    $firstName = trim(mysqli_real_escape_string($conn, $_POST['firstName']));
     $middleName = trim(mysqli_real_escape_string($conn, $_POST['middleName']));
-    $lastName   = trim(mysqli_real_escape_string($conn, $_POST['lastName']));
-    $email      = trim(mysqli_real_escape_string($conn, $_POST['email']));
-    $phone      = trim(mysqli_real_escape_string($conn, $_POST['phone']));
-    $birthdate  = trim(mysqli_real_escape_string($conn, $_POST['birthdate']));
-    $address    = trim(mysqli_real_escape_string($conn, $_POST['address']));
-    $password   = $_POST['password'];
+    $lastName = trim(mysqli_real_escape_string($conn, $_POST['lastName']));
+    $email = trim(mysqli_real_escape_string($conn, $_POST['email']));
+    $phone = trim(mysqli_real_escape_string($conn, $_POST['phone']));
+    $birthdate = trim(mysqli_real_escape_string($conn, $_POST['birthdate']));
+    $address = trim(mysqli_real_escape_string($conn, $_POST['address']));
+    $password = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
     if ($password !== $confirmPassword) {
         $errorMessage = "Passwords do not match.";
     }
 
-    $destination = ""; 
+    $today = new DateTime();
+    $birthdateObj = new DateTime($birthdate);
+    $age = $today->diff($birthdateObj)->y;
+    if ($age < 18) {
+        $errorMessage = "You must be at least 18 years old to register.";
+    }
+
+    $destination = "";
     if (isset($_FILES['img']) && $_FILES['img']['error'] === 0) {
-        $fileTmp  = $_FILES['img']['tmp_name'];
+        $fileTmp = $_FILES['img']['tmp_name'];
         $fileName = $_FILES['img']['name'];
-        $fileExt  = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-        $allowed  = ['jpg','jpeg','png','gif',];
+        $fileExt = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'gif',];
 
         if (!in_array($fileExt, $allowed)) {
             $errorMessage = "Only JPG, JPEG, PNG, GIF files allowed.";
@@ -55,11 +62,11 @@ if (isset($_POST['submit'])) {
     if (mysqli_num_rows($check) > 0) {
         $row = mysqli_fetch_assoc($check);
         if ($row['Email'] === $email) {
-         
+
             $errorMessage = "Email already exists.";
         } elseif ($row['Phone'] === $phone) {
             $errorMessage = "Phone number already exists.";
-            
+
         }
     }
     if (empty($errorMessage)) {
@@ -72,5 +79,6 @@ if (isset($_POST['submit'])) {
             $errorMessage = "Error: " . mysqli_error($conn);
         }
     }
+
 }
 ?>

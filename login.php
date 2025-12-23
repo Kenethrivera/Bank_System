@@ -19,7 +19,7 @@
           <div class="logo-circle mx-auto">
             <i class="bi bi-building text-white fs-2"></i>
           </div>
-          <h1 class="h3 fw-bold text-dark">Maangas na Bank</h1>
+          <h1 class="h3 fw-bold text-dark">BangisBank</h1>
           <p class="text-muted mb-0">Sign in to your account</p>
         </div><?php 
 if (isset($_GET['error'])) {

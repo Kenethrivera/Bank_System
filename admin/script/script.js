@@ -21,8 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalPhone = document.getElementById('modalPhone');
   const modalDOB = document.getElementById('modalDOB');
   const modalAddress = document.getElementById('modalAddress');
-  const modalImg = document.querySelector('.modalImg')
-
+  const modalImg = document.querySelector('.modalImg');
   document.querySelectorAll('.view-profile-btn').forEach(btn => {
     btn.addEventListener('click', function () {
 
@@ -31,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
       modalPhone.textContent = this.dataset.phone;
       modalDOB.textContent = this.dataset.dob;
       modalAddress.textContent = this.dataset.address;
+      document.getElementById('modalAccountId').value = this.dataset.id;
       if (this.dataset.img) {
     modalImg.src = `../${this.dataset.img}`;
 } else {
@@ -41,5 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
+
 
 document.querySelector('#dashboard').classList.add('active');
