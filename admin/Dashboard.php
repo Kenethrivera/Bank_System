@@ -84,7 +84,7 @@
               </p>
             </div>
             <div class="row g-4 mb-4">
-              <div class="col-md-6 col-lg-4">
+              <div class="col-md-6 col-lg-3">
                 <div class="card p-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <div class="bg-primary text-white rounded p-2">
@@ -95,10 +95,22 @@
                   <h3 class="fw-bold"><?php echo $totalCustomers; ?></h3>
                 </div>
               </div>
-              <div class="col-md-6 col-lg-4">
+             
+              <div class="col-md-6 col-lg-3">
                 <div class="card p-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="bg-purple text-white rounded p-2" style="background:#6f42c1;">
+                    <div class="bg-primary text-white rounded p-2 bg-purple-custom">
+                      <i class="bi-person-lock fs-4"></i>
+                    </div>
+                  </div>
+                  <small class="text-muted">Pending Accounts</small>
+                  <h3 class="fw-bold"><?php echo $pendingAcc; ?></h3>
+                </div>
+              </div>
+              <div class="col-md-6 col-lg-3">
+                <div class="card p-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="bg-purple text-white rounded p-2 bg-purple-custom">
                       <i class="bi bi-arrow-left-right fs-4"></i>
                     </div>
                   </div>
@@ -106,10 +118,10 @@
                   <h3 class="fw-bold">32</h3>
                 </div>
               </div>
-              <div class="col-md-6 col-lg-4">
+              <div class="col-md-6 col-lg-3">
                 <div class="card p-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="bg-warning text-white rounded p-2">
+                    <div class="bg-warning text-white rounded p-2 bg-red-custom">
                       <i class="bi bi-cash-stack fs-4"></i>
                     </div>
                   </div>
@@ -213,12 +225,15 @@
                 <span class="input-group-text bg-white">
                   <i class="bi bi-search text-muted"></i>
                 </span>
-                <input type="text" class="form-control" placeholder="Search by account number or customer name...">
+                <input type="text" class="form-control"id="searchInput" placeholder="Search by account number or customer name...">
               </div>
             </div>
             <div class="card p-3">
               <div class="table-responsidve">
-                <table class="table table-hover align-middle">
+                <div id="notFound" class="text-center text-muted mt-3" style="display: none;">
+  No accounts found matching your search.
+</div>
+                <table class="table table-hover align-middle" id="searchableTable">
                   <thead class="table-light">
                     <tr>
                       <th>Account Number</th>

@@ -73,6 +73,11 @@ $total_customers_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM use
 $row = mysqli_fetch_assoc($total_customers_result);
 $totalCustomers = $row['total'];
 
+/* Pending Accounts */
+$pending_acc = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts Where Status='Pending'");
+$row = mysqli_fetch_assoc($pending_acc);
+$pendingAcc = $row['total'];
+
 /* Count pending loans */
 $pending_loan = mysqli_query($conn, "SELECT COUNT(*) AS PendingLoans FROM loans WHERE Status='Pending'");
 $row = mysqli_fetch_assoc($pending_loan);
