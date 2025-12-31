@@ -5,12 +5,14 @@ body {
 /* Sidebar base */
 #sidebar {
   background: #3247be;
-  height: 735px;
   color: white;
   width: 60px;
   /* collapsed width */
   transition: width 0.3s ease;
   overflow: hidden;
+  min-height: 100vh; /* full viewport height */
+  display: flex;
+  flex-direction: column; /* if you want vertical stacking */
 }
 
 /* Expand sidebar on hover */
@@ -115,30 +117,42 @@ main section.active {
 
 /* Base style for action buttons */
 .btn-action {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.8em;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-right: 5px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.8em;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-right: 5px;
 }
 
 .btn-accept {
-    background-color: #d4f7d4;
-    color: #2f6627;
+  background-color: #d4f7d4;
+  color: #2f6627;
 }
 
 .btn-accept:hover {
-    background-color: #bee8be; 
+  background-color: #bee8be;
 }
 
 .btn-reject {
-    background-color: #fcdada;
-    color: #a12b2b;
+  background-color: #fcdada;
+  color: #a12b2b;
 }
 
 .btn-reject:hover {
-    background-color: #f7c1c1;
+  background-color: #f7c1c1;
+}
+
+/* savings box hover effects */
+.card-hover-effect {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out !important;
+  cursor: pointer;
+  box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .175) !important;
 }

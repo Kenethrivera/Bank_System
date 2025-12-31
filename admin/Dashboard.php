@@ -1,3 +1,10 @@
+<?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+?>
+
+
 <?php require_once 'php/Dashboard_php.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -362,12 +369,391 @@
           </div>
 
         </section>
-        <section id="savings">
-          <h2>Savings</h2>
-          <!-- savings content -->
-          <!-- Kenneth -->
+
+        <section id="savings" class="flex-grow-2 p-2">
+          <div class="container-fluid">
+
+            <!-- Header -->
+            <div class="row mb-4 g-3">
+              <div class="col-12 col-md-6 col-lg-8">
+                <h3>Savings Management</h3>
+                <small class="text-muted">
+                  Manage customer savings portfolios and rates.
+                </small>
+              </div>
+              <div class="col-12 col-md-6 col-lg-4 d-flex align-items-center">
+                <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#savingsModal">
+                  + New Savings Accounts
+                </button>
+              </div>
+            </div> <!-- Header closing -->
+            <div class="row g-3">
+              <div class="col-md-6 col-lg-4">
+                <div class="card p-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="fw-semibold text-secondary">Total Assets Managed</small>
+                  </div>
+                  <h3 class="fw-bold">₱<?= number_format($totalAssets, 2) ?></h3>
+                </div>
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <div class="card p-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="fw-semibold text-secondary">Active Savings</small>
+                  </div>
+                  <h3 class="fw-bold"><?= $activeSavings ?></h3>
+                </div>
+              </div>
+              <div class="col-md-6 col-lg-4">
+                <div class="card p-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="fw-semibold text-secondary">Average Interest Rate</small>
+                  </div>
+                  <h3 class="fw-bold"><?= $avgInterest ?>%</h3>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- search and filters -->
+            <div class="card mb-3 mt-3">
+              <div class="card-body">
+
+                <form method="GET">
+                  <div class="row g-2 align-items-center">
+
+                    <div class="col-lg-5 col-md-6">
+                      <div class="input-group">
+                        <span class="input-group-text">
+                          <span class="material-symbols-outlined">search</span>
+                        </span>
+                        <input type="text" name="search" class="form-control" placeholder="Search by customer name"
+                          value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                        <button class="btn btn-primary" type="submit">Search</button>
+                      </div>
+                    </div>
+                </form>
+
+                <div class="col-lg-7 col-md-6">
+                  <div class="filter-buttons d-flex justify-content-end align-items-center gap-3 flex-wrap">
+                    <i class="bi bi-funnel fs-5"></i>
+                    <button class="btn btn-dark btn-sm rounded-pill fw-bold">All</button>
+                    <button class="btn btn-light btn-sm rounded-pill fw-bold">Active</button>
+                    <button class="btn btn-light btn-sm rounded-pill fw-bold">Pending</button>
+                    <button class="btn btn-light btn-sm rounded-pill fw-bold">Frozen</button>
+                    <button class="btn btn-light btn-sm rounded-pill fw-bold">Closed</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mt-2">
+            <?php if (!empty($savings_result)): ?>
+              <?php foreach ($savings_result as $row): ?>
+                <?php
+                $status = $row['status'] ?? 'Pending';
+                $account_type = $row['savings_type'] ?? 'N/A';
+                $customer_id = $row['customer_id'] ?? 0;
+                $savings_id = $row['savings_id'] ?? '';
+                $interest_rate = floatval($row['interest_rate'] ?? 0);
+                $total_balance = floatval($row['balance'] ?? 0);
+
+                $bar_class = $status === 'Active' ? 'bg-success'
+                  : ($status === 'Frozen' ? 'bg-danger'
+                    : ($status === 'Pending' ? 'bg-warning'
+                      : 'bg-secondary'));
+
+                $badge_class = $status === 'Active' ? 'bg-success-subtle text-success px-3'
+                  : ($status === 'Frozen' ? 'bg-danger-subtle text-danger px-3'
+                    : ($status === 'Pending' ? 'bg-warning-subtle text-warning px-3'
+                      : 'bg-secondary-subtle text-secondary px-3'));
+
+                ?>
+
+                <div class="col-12 col-md-6 col-lg-4 savings-tile" data-status="<?= $status ?>">
+                  <div class="card h-100 shadow-sm rounded-4 overflow-hidden hover-lift card-hover-effect">
+
+                    <div class="<?= $bar_class ?>" style="height:6px;"></div>
+
+                    <div class="card-body">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                          <?php
+                          $full_name = $row['full_name'] ?? 'Customer #' . $customer_id;
+                          $parts = explode(' ', $full_name);
+                          $acronym = strtoupper(($parts[0][0] ?? '') . ($parts[1][0] ?? ($parts[0][1] ?? '')));
+                          ?>
+                          <div
+                            class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center"
+                            style="width:42px; height:42px;">
+                            <?= $acronym ?>
+                          </div>
+                          <div>
+                            <div class="fw-bold">
+                              <?= !empty($row['full_name']) ? $row['full_name'] : 'Customer #' . $customer_id ?>
+                            </div>
+                            <small class="text-muted"><?= $savings_id ?></small>
+                          </div>
+                        </div>
+
+                        <span class="badge rounded-pill <?= $badge_class ?>">
+                          ● <?= $status ?>
+                        </span>
+                      </div>
+
+                      <div class="mb-3">
+                        <small class="text-muted">Total Balance</small>
+                        <div class="d-flex align-items-center gap-2">
+                          <h3 class="fw-bold mb-0">₱<?= number_format($total_balance, 2) ?></h3>
+                          <small class="text-success fw-semibold" style="font-size:0.85rem;">
+                            <i class="bi bi-arrow-up-right"></i> <?= number_format($interest_rate * 100, 2) ?>%
+                          </small>
+                        </div>
+                      </div>
+
+                      <hr>
+
+                      <div class="d-flex justify-content-between mt-3">
+                        <div>
+                          <small class="text-muted">Interest Rate</small><br>
+                          <span
+                            class="badge bg-primary-subtle text-primary fw-semibold"><?= number_format($interest_rate * 100, 2) ?>%
+                            APY</span>
+                        </div>
+                        <div class="text-end">
+                          <small class="text-muted">Savings Type</small><br>
+                          <span class="fw-semibold"><?= $account_type ?></span>
+                        </div>
+                      </div>
+                      <!-- DEATAILS BUTTON -->
+                      <div class="d-flex align-items-center gap-2 mt-2">
+                        <button type="button" class="btn btn-outline-secondary w-100 rounded-3" data-bs-toggle="modal"
+                          data-bs-target="#detailsModal" data-savingsid="<?= $savings_id ?>"
+                          data-customername="<?= htmlspecialchars($row['full_name'] ?? 'Customer #' . $customer_id) ?>"
+                          data-accounttype="<?= $account_type ?>" data-status="<?= $status ?>"
+                          data-totalbalance="<?= $total_balance ?>" data-interestrate="<?= $interest_rate ?>">
+                          <i class="bi bi-eye me-1"></i> Details
+                        </button>
+
+                        <!-- GEAR / SETTINGS BUTTON -->
+                        <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#gearModal"
+                          data-savingsid="<?= $savings_id ?>"
+                          data-savingsname="<?= htmlspecialchars($row['savings_type']) ?>"
+                          data-interestrate="<?= $interest_rate ?>">
+                          <i class="bi bi-gear"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-light status-btn" data-bs-toggle="modal"
+                          data-bs-target="#statusModal" data-savingsid="<?= $savings_id ?>"
+                          data-currentstatus="<?= $status ?>">
+                          <i
+                            class="bi <?= $status === 'Active' ? 'bi-unlock text-success' :
+                              ($status === 'Frozen' ? 'bi-lock-fill text-danger' :
+                                ($status === 'Pending' ? 'bi-hourglass-split text-warning' : 'bi-x-circle text-secondary')) ?>"></i>
+                        </button>
+
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              <?php endforeach; ?>
+            <?php else: ?>
+              <p class="text-muted">No savings accounts found.</p>
+            <?php endif; ?>
+          </div> <!-- closing for savings box -->
+
+          <!-- DETAILS MODAL -->
+          <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+              <div class="modal-content">
+
+                <div class="modal-header">
+                  <h5 class="modal-title" id="detailsModalLabel">Savings Details</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                  <!-- Account Info -->
+                  <h6>Account Info</h6>
+                  <p><strong>Customer:</strong> <span id="modalCustomerName"></span></p>
+                  <p><strong>Savings ID:</strong> <span id="modalSavingsId"></span></p>
+                  <p><strong>Status:</strong> <span id="modalStatus"></span></p>
+                  <p><strong>Total Balance:</strong> ₱<span id="modalTotalBalance"></span></p>
+                  <p><strong>Interest Rate:</strong> <span id="modalInterestRate"></span>%</p>
+                  <p><strong>Account Type:</strong> <span id="modalAccountType"></span></p>
+                  <p><strong>Total Interest Earned:</strong> ₱<span id="modalTotalInterest">0.00</span></p>
+
+                  <hr>
+                  <!-- transaction table -->
+                  <h6>Transactions</h6>
+                  <table class="table table-bordered table-striped table-sm">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Balance After</th>
+                      </tr>
+                    </thead>
+                    <tbody id="modalTransactions">
+                      <tr>
+                        <td colspan="3" class="text-center">Loading...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- SETTINGS MODAL -->
+          <div class="modal fade" id="gearModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+
+                <div class="modal-header">
+                  <h5 class="modal-title">Edit Account Settings</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                  <form method="POST" id="gearForm">
+                    <input type="hidden" id="gearSavingsId" name="savings_id">
+
+                    <div class="mb-3">
+                      <label for="gearSavingsType" class="form-label">Savings Type</label>
+                      <select id="gearSavingsType" name="savings_type" class="form-select">
+                        <option value="Regular">Regular</option>
+                        <option value="Fixed">Fixed</option>
+                        <option value="Special">Special</option>
+                      </select>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="gearInterestRate" class="form-label">Interest Rate (%)</label>
+                      <input type="number" id="gearInterestRate" class="form-control" readonly name="interest_rate"
+                        step="0.01" min="0">
+                    </div>
+
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" name="update_savings" class="btn btn-primary" id="gearSaveBtn">Save
+                        Changes</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STATUS CHANGE MODAL -->
+          <div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+
+                <div class="modal-header">
+                  <h5 class="modal-title">Change Account Status</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body text-center">
+                  <p>Current status: <strong id="currentStatusText"></strong></p>
+                  <form method="POST" id="statusForm">
+                    <input type="hidden" name="savings_id" id="statusSavingsId">
+
+                    <div class="d-flex justify-content-around flex-wrap gap-2">
+                      <button type="submit" name="toggle_status" value="Active" class="btn btn-success">
+                        <i class="bi bi-unlock"></i> Active
+                      </button>
+
+                      <button type="submit" name="toggle_status" value="Pending" class="btn btn-warning">
+                        <i class="bi bi-hourglass-split"></i> Pending
+                      </button>
+
+                      <button type="submit" name="toggle_status" value="Frozen" class="btn btn-danger">
+                        <i class="bi bi-lock-fill"></i> Frozen
+                      </button>
+
+                      <button type="submit" name="toggle_status" value="Closed" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Closed
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- MODAL FOR NEW SAVINGS APPLICATION -->
+          <div class="modal fade" id="savingsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+
+                <form method="POST" id="newSavingsForm">
+
+                  <!-- header -->
+                  <div class="modal-header">
+                    <h5 class="modal-title">New Savings Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+
+                  <!-- body -->
+                  <div class="modal-body">
+                    <input type="hidden" name="savings_id">
+
+                    <div class="mb-3">
+                      <label class="form-label">Customer:</label>
+                      <select name="customer_id" class="form-select" required>
+                        <option value="">--Select Customer--</option>
+                        <?php foreach ($users as $user): ?>
+                          <option value="<?= $user['customer_id'] ?>">
+                            <?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?>
+                          </option>
+                        <?php endforeach; ?>
+                      </select>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Savings Type:</label>
+                      <select id="newSavingsType" name="savings_type" class="form-select" required>
+                        <option value="Regular">Regular</option>
+                        <option value="Fixed">Fixed</option>
+                        <option value="Special">Special</option>
+                      </select>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Interest Rate (%):</label>
+                      <input type="number" id="newInterestRate" class="form-control" readonly name="interest_rate"
+                        step="0.01" min="0">
+                    </div>
+
+
+                    <div class="mb-3">
+                      <label class="form-label">Initial Deposit:</label>
+                      <input type="number" name="initial_deposit" class="form-control" min="0" step="0.01" required>
+                    </div>
+                  </div>
+
+                  <!-- footer -->
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="add_savings" class="btn btn-primary">Create Account</button>
+                  </div>
+
+                </form>
+              </div>
+            </div>
+          </div>
         </section>
-        
+
+        <!-- LOAN SECTION -->
         <section id="loan" class="flex-grow-2 p-2">
           <div class="container-fluid">
 
@@ -387,14 +773,22 @@
             </div>
 
             <!-- Search -->
-            <div class="card mb-3">
+            <form method="GET" class="card mb-3">
               <div class="card-body">
                 <div class="input-group">
-                  <span class="input-group-text">🔍</span>
-                  <input type="text" class="form-control" placeholder="Search by customer name or loan type..." />
+                  <span class="input-group-text">
+                    <span class="material-symbols-outlined">
+                      search
+                    </span>
+                  </span>
+                  <input type="text" name="search" class="form-control"
+                    placeholder="Search by customer name or loan type..."
+                    value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                  <button class="btn btn-primary" type="submit">Search</button>
                 </div>
               </div>
-            </div>
+            </form>
+
 
             <!-- Loans Table -->
             <div class="card">
@@ -439,11 +833,31 @@
                           if ($row['Status'] === 'Pending') {
                             echo "<form method='Post' style='display:inline;'>
                                     <input type='hidden' name='loan_id' value='{$row['loan_id']}'>
-                                    <button type='submit' name='action' value='Approved'class='btn-action btn-accept'>Accept</button>
+                                    <button 
+                                      type='button' 
+                                      name='action' 
+                                      value='Approved'
+                                      class='btn-action btn-accept'
+                                      data-bs-toggle='modal'
+                                      data-bs-target='#confirmModal'
+                                      data-action='Approved'
+                                      data-loanid='{$row['loan_id']}'
+                                    >Accept
+                                    </button>
                                   </form>
                                   <form method='post' style='display:inline;'>
                                     <input type='hidden' name='loan_id' value='{$row['loan_id']}'>
-                                    <button type='submit' name='action' value='Rejected' class='btn-action btn-reject'>Reject</button>
+                                    <button 
+                                      type='button' 
+                                      name='action' 
+                                      value='Rejected' 
+                                      class='btn-action btn-reject'
+                                      data-bs-toggle='modal'
+                                      data-bs-target='#confirmModal'
+                                      data-action='Rejected'
+                                      data-loanid='{$row['loan_id']}'
+                                    >Reject
+                                    </button>
                                   </form>";
                           } else {
                             echo "-";
@@ -461,8 +875,90 @@
                   </table>
                 </div>
               </div>
+
+              <!-- closing of loans table -->
             </div>
 
+          </div>
+
+          <!-- modal for reject and accept -->
+          <div class="modal fade" id="confirmModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+
+                <div class="modal-header">
+                  <h5 class="modal-title">Confirm Action</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                  <p id="confirmMessage"></p>
+                </div>
+
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancel
+                  </button>
+
+                  <form method="post">
+                    <input type="hidden" name="loan_id" id="confirmLoanId">
+                    <input type="hidden" name="action" id="confirmAction">
+                    <button type="submit" class="btn btn-primary">
+                      Yes, Confirm
+                    </button>
+                  </form>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- modal for + new loan application -->
+          <div class="modal fade" id="loanModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <!-- content -->
+                <form method="post">
+
+                  <!-- header -->
+                  <div class="modal-header">
+                    <h5 class="modal-title">New Loan Application</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <!-- body -->
+                  <div class="modal-body">
+                    <input type="hidden" name="loan_id">
+                    <div class="mb-3">
+                      <label class="form-label">Customer Name: </label>
+                      <input type="text" name="customer_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Loan Type:</label>
+                      <select name="loan_type" class="form-select" required>
+                        <option value="">--Select Loan Type--</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Home">Home</option>
+                        <option value="Auto">Auto Loan</option>
+                        <option value="Business">Business</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Amount:</label>
+                      <input type="number" name="amount" class="form-control" min="1" step="0.01" required>
+                    </div>
+                  </div>
+
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                      Cancel
+                    </button>
+                    <button type="submit" name="add_loan" class="btn btn-primary">
+                      Submit Application
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         </section>
 
