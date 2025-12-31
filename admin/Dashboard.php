@@ -947,7 +947,7 @@ header("Expires: 0"); // Proxies
                       if (mysqli_num_rows($loans_result) > 0) {
                         while ($row = mysqli_fetch_assoc($loans_result)) {
 
-                          $formattedAmount = "$" . number_format($row['amount'], 2);
+                          $formattedAmount = "₱" . number_format($row['amount'], 2);
 
                           // for styling the STATUS column
                           $statusStyle = '';
