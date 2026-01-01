@@ -1,11 +1,20 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+session_start();
+
+// Redirect if admin is not logged in
+if (!isset($_SESSION['email'])) {
+    header("Location: ../login.php");
+    exit();
+}
+
+// Prevent caching so browser back button doesn't show logged-in content
+header("Cache-Control: no-cache, no-store, must-revalidate"); // HTTP 1.1
+header("Pragma: no-cache"); // HTTP 1.0
+header("Expires: 0"); // Proxies
 ?>
 
 
-<?php require_once 'php/Dashboard_php.php'; ?>
+<?php require_once 'php/Dashboard.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -43,9 +52,9 @@ error_reporting(E_ALL);
             </a>
           </li>
           <li class="nav-item">
-            <a href="#customers" class="nav-link">
-              <span class="material-symbols-outlined">manage_accounts</span>
-              <span class="link-text">Customers</span>
+            <a href="#accounts" class="nav-link">
+              <span class="material-symbols-outlined">account_balance_wallet</span>
+              <span class="link-text">Accounts</span>
             </a>
           </li>
           <li class="nav-item">
@@ -73,7 +82,7 @@ error_reporting(E_ALL);
             </a>
           </li>
           <li class="nav-item">
-            <a href="#logout" class="nav-link">
+            <a href="#" id="adminLogoutLink" class="nav-link">
               <span class="material-symbols-outlined">logout</span>
               <span class="link-text">Logout</span>
             </a>
@@ -91,7 +100,7 @@ error_reporting(E_ALL);
               </p>
             </div>
             <div class="row g-4 mb-4">
-              <div class="col-md-6 col-lg-4">
+              <div class="col-md-6 col-lg-3">
                 <div class="card p-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <div class="bg-primary text-white rounded p-2">
@@ -102,10 +111,22 @@ error_reporting(E_ALL);
                   <h3 class="fw-bold"><?php echo $totalCustomers; ?></h3>
                 </div>
               </div>
-              <div class="col-md-6 col-lg-4">
+
+              <div class="col-md-6 col-lg-3">
                 <div class="card p-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="bg-purple text-white rounded p-2" style="background:#6f42c1;">
+                    <div class="bg-primary text-white rounded p-2 bg-purple-custom">
+                      <i class="bi-person-lock fs-4"></i>
+                    </div>
+                  </div>
+                  <small class="text-muted">Pending Accounts</small>
+                  <h3 class="fw-bold"><?php echo $pendingAcc; ?></h3>
+                </div>
+              </div>
+              <div class="col-md-6 col-lg-3">
+                <div class="card p-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="bg-purple text-white rounded p-2 bg-purple-custom">
                       <i class="bi bi-arrow-left-right fs-4"></i>
                     </div>
                   </div>
@@ -113,15 +134,15 @@ error_reporting(E_ALL);
                   <h3 class="fw-bold">32</h3>
                 </div>
               </div>
-              <div class="col-md-6 col-lg-4">
+              <div class="col-md-6 col-lg-3">
                 <div class="card p-3">
                   <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="bg-warning text-white rounded p-2">
+                    <div class="bg-warning text-white rounded p-2 bg-red-custom">
                       <i class="bi bi-cash-stack fs-4"></i>
                     </div>
                   </div>
                   <small class="text-muted">Pending Loans</small>
-                  <h3 class="fw-bold">6</h3>
+                  <h3 class="fw-bold"><?php echo $pendingLoan; ?></h3>
                 </div>
               </div>
             </div>
@@ -206,7 +227,7 @@ error_reporting(E_ALL);
 
           </div>
         </section>
-        <section id="customers">
+        <section id="accounts">
           <div class="container-fluid">
 
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -220,104 +241,177 @@ error_reporting(E_ALL);
                 <span class="input-group-text bg-white">
                   <i class="bi bi-search text-muted"></i>
                 </span>
-                <input type="text" class="form-control" placeholder="Search by account number or customer name...">
+                <input type="text" class="form-control" id="searchInput"
+                  placeholder="Search by account number or customer name...">
               </div>
             </div>
-
             <div class="card p-3">
-              <div class="table-responsive">
-                <table class="table table-hover align-middle">
+              <div class="table-responsidve">
+                <div id="notFound" class="text-center text-muted mt-3" style="display: none;">
+                  No accounts found matching your search.
+                </div>
+                <table class="table table-hover align-middle" id="searchableTable">
                   <thead class="table-light">
                     <tr>
                       <th>Account Number</th>
                       <th>Customer</th>
                       <th>Email</th>
-                      <th>Phone</th>
                       <th>Balance</th>
+                      <th>Status</th>
                       <th class="text-center">Actions</th>
+
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>ACC-10001</td>
-                      <td>Juan Dela Cruz</td>
-                      <td>JuanDelaCruz@gmail.com</td>
-                      <td>09512345678</td>
-                      <td class="fw-semibold text-success">$12,500.00</td>
+                    <?php
+                    if (mysqli_num_rows($accounts_result) > 0) {
+                      while ($row = mysqli_fetch_assoc($accounts_result)) {
 
-                      <td class="text-center">
-                        <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
-                          data-bs-target="#accountModal">
-                          <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger">
-                          <i class="bi bi-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
+                        // Build full name
+                        $fullName = $row['FirstName'] . " " . ($row['MiddleName'] ? $row['MiddleName'] . " " : "") . $row['LastName'];
 
+                        $accountNumber = "ACC-" . str_pad($row['ID'], 5, '0', STR_PAD_LEFT);
 
+                        if ($row['Status'] === 'Approved') {
+                          $statusClass = 'status-pill status-approved';
+                        } elseif ($row['Status'] === 'Pending') {
+                          $statusClass = 'status-pill status-pending';
+                        } elseif ($row['Status'] === 'Rejected') {
+                          $statusClass = 'status-pill status-rejected';
+                        }
+                        $fullNameEsc = htmlspecialchars($fullName, ENT_QUOTES);
+                        $emailEsc = htmlspecialchars($row['Email'], ENT_QUOTES);
+                        $phoneEsc = htmlspecialchars($row['Phone'], ENT_QUOTES);
+                        $dobEsc = htmlspecialchars($row['Birthdate'], ENT_QUOTES);
+                        $addressEsc = htmlspecialchars($row['Address'], ENT_QUOTES);
+                        $statusEsc = htmlspecialchars($row['Status'], ENT_QUOTES);
+                        $ImgEsc = htmlspecialchars($row['Img'], ENT_QUOTES);
+                        if ($row['Status'] === 'Approved') {
+                          $balanceDisplay = '₱ ' . number_format($row['Balance'], 2);
+                          $balanceClass = 'fw-semibold text-success';
+                        } else {
+                          $balanceDisplay = '— — — — —';
+                          $balanceClass = 'text-muted';
+                        }
+
+                        echo "<tr data-account='{$accountNumber}' data-name='{$fullNameEsc}' >
+                                  <td>{$accountNumber}</td>
+                                  <td>{$fullNameEsc}</td>
+                                  <td>{$emailEsc}</td>
+                                  <td class='{$balanceClass}'>{$balanceDisplay}</td>
+                                  <td><span class='{$statusClass}'>{$statusEsc}</span></td>
+                                  <td class='text-center'>
+                                      <button type='button' class='btn btn-sm btn-outline-info me-1 view-profile-btn' 
+                                              data-bs-toggle='modal' 
+                                              data-bs-target='#profileModal'
+                                              data-id='{$row['ID']}'
+                                              data-name='{$fullNameEsc}'
+                                              data-email='{$emailEsc}'
+                                              data-phone='{$phoneEsc}'
+                                              data-dob='{$dobEsc}'
+                                              data-address='{$addressEsc}'
+                                              data-status='{$statusEsc}'
+                                              data-img='{$ImgEsc}'>
+                                              
+                                              <i class='bi bi-eye'></i>
+                                      </button>
+                                       <form method='POST' onsubmit=\"return confirm('Are you sure you want to delete this account? This action cannot be undone.');\" style='display:inline;'>
+                                        <input type='hidden' name='delete_account_id' value='{$row['ID']}'>
+                                        <button type='submit' class='btn btn-sm btn-outline-danger'>
+                                          <i class='bi bi-trash'></i>
+                                        </button>
+                                      </form>
+                                  </td>
+                                </tr>";
+                      }
+                    } else {
+                      echo "<tr><td colspan='6'>No Customers Found</td></tr>";
+                    }
+                    ?>
                   </tbody>
+
                 </table>
               </div>
             </div>
-
           </div>
         </section>
-        <div class="modal fade" id="accountModal" tabindex="-1">
-          <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
+        <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 overflow-hidden shadow-lg">
 
-              <div class="modal-header">
-                <h5 class="modal-title">Create / Edit Account</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              <div class="position-relative">
+                <div class="bg-primary bg-gradient" style="height: 130px;"></div>
+
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"
+                  aria-label="Close"></button>
               </div>
 
-              <div class="modal-body">
-                <form class="row g-3">
+              <div class="modal-body px-4 pb-4">
 
-                  <div class="col-md-6">
-                    <label class="form-label">Account Number</label>
-                    <input type="text" class="form-control" required>
+                <div class="d-flex justify-content-center justify-content-md-start">
+                  <div class="position-relative" style="margin-top:-70px;">
+                    <img alt="Profile" class="rounded-circle border border-4 border-white shadow modalImg" width="130"
+                      height="130">
+
+                    <span
+                      class="position-absolute bottom-0 end-0 bg-success rounded-circle border border-2 border-white"
+                      style="width:16px;height:16px;"></span>
+                  </div>
+                </div>
+                <div class="mt-3 text-center text-md-start">
+                  <h4 id="modalName" class="fw-bold mb-0">John Doe</h4>
+                </div>
+                <div class="mt-4">
+
+                  <div class="d-flex gap-3 mb-3">
+                    <i class="bi bi-envelope text-muted fs-5"></i>
+                    <div>
+                      <div class="text-uppercase small text-muted fw-semibold">Email Address</div>
+                      <div class="fw-medium" id="modalEmail">fsafds</div>
+                    </div>
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label">First Name</label>
-                    <input type="text" class="form-control" step="0.01" required>
+                  <div class="d-flex gap-3 mb-3">
+                    <i class="bi bi-telephone text-muted fs-5"></i>
+                    <div>
+                      <div class="text-uppercase small text-muted fw-semibold">Phone Number</div>
+                      <div class="fw-medium" id="modalPhone"></div>
+                    </div>
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label">Middle Name</label>
-                    <input type="text" class="form-control" step="0.01" required>
+                  <div class="d-flex gap-3 mb-3">
+                    <i class="bi bi-calendar-event text-muted fs-5"></i>
+                    <div>
+                      <div class="text-uppercase small text-muted fw-semibold">Date of Birth</div>
+                      <div class="fw-medium" id="modalDOB"></div>
+                    </div>
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label">Last Name</label>
-                    <input type="text" class="form-control" step="0.01" required>
+                  <div class="d-flex gap-3 mb-3">
+                    <i class="bi bi-geo-alt text-muted fs-5"></i>
+                    <div>
+                      <div class="text-uppercase small text-muted fw-semibold">Address</div>
+                      <div class="fw-medium" id="modalAddress"></div>
+                    </div>
                   </div>
 
+                </div>
+                <form method="POST">
+                  <input type="hidden" name="account_id" id="modalAccountId">
 
-                  <div class="col-md-6">
-                    <label class="form-label">Email</label>
-                    <input type="text" class="form-control" step="0.01" required>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label">Phone</label>
-                    <input type="text" class="form-control" step="0.01" required>
+                  <div class="d-flex flex-column flex-md-row gap-3 pt-4 border-top mt-4">
+                    <button type="submit" name="update_status" value="Rejected" class="btn btn-outline-danger w-100">
+                      <i class="bi bi-x-circle me-2"></i>Reject
+                    </button>
+                    <button type="submit" name="update_status" value="Approved" class="btn btn-success w-100">
+                      <i class="bi bi-check-circle me-2"></i>Approve
+                    </button>
                   </div>
                 </form>
               </div>
-
-              <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button class="btn btn-primary">Save</button>
-              </div>
-
             </div>
           </div>
         </div>
-
         <section id="transactions">
           <div class="container-fluid">
 
@@ -367,9 +461,9 @@ error_reporting(E_ALL);
             </div>
 
           </div>
-
         </section>
 
+        <!--SAVINGS SECTION  -->
         <section id="savings" class="flex-grow-2 p-2">
           <div class="container-fluid">
 
@@ -530,12 +624,22 @@ error_reporting(E_ALL);
                       <!-- DEATAILS BUTTON -->
                       <div class="d-flex align-items-center gap-2 mt-2">
                         <button type="button" class="btn btn-outline-secondary w-100 rounded-3" data-bs-toggle="modal"
-                          data-bs-target="#detailsModal" data-savingsid="<?= $savings_id ?>"
-                          data-customername="<?= htmlspecialchars($row['full_name'] ?? 'Customer #' . $customer_id) ?>"
-                          data-accounttype="<?= $account_type ?>" data-status="<?= $status ?>"
-                          data-totalbalance="<?= $total_balance ?>" data-interestrate="<?= $interest_rate ?>">
+                          data-bs-target="#detailsModal" data-savingsid="<?= htmlspecialchars($savings_id) ?>"
+                          data-customername="<?= htmlspecialchars($row['full_name'] ?? 'Customer') ?>"
+                          data-email="<?= htmlspecialchars($row['Email'] ?? '') ?>"
+                          data-phone="<?= htmlspecialchars($row['Phone'] ?? '') ?>"
+                          data-address="<?= htmlspecialchars($row['Address'] ?? '') ?>"
+                          data-birthdate="<?= htmlspecialchars($row['Birthdate'] ?? '') ?>"
+                          data-userstatus="<?= htmlspecialchars($row['UserStatus'] ?? 'Active') ?>"
+                          data-profileimg="<?= htmlspecialchars($row['Img'] ?? '') ?>"
+                          data-accounttype="<?= htmlspecialchars($account_type ?? '') ?>"
+                          data-status="<?= htmlspecialchars($status ?? '') ?>"
+                          data-totalbalance="<?= htmlspecialchars($total_balance ?? 0) ?>"
+                          data-interestrate="<?= htmlspecialchars($interest_rate ?? 0) ?>">
                           <i class="bi bi-eye me-1"></i> Details
                         </button>
+
+
 
                         <!-- GEAR / SETTINGS BUTTON -->
                         <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#gearModal"
@@ -567,31 +671,64 @@ error_reporting(E_ALL);
           </div> <!-- closing for savings box -->
 
           <!-- DETAILS MODAL -->
+          <!-- DETAILS MODAL (keep only this one) -->
           <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
-              <div class="modal-content">
+              <div class="modal-content rounded-4 shadow">
 
-                <div class="modal-header">
-                  <h5 class="modal-title" id="detailsModalLabel">Savings Details</h5>
+                <!-- Header -->
+                <div class="modal-header bg-light">
+                  <h5 class="modal-title">Savings Account Details</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
-                  <!-- Account Info -->
-                  <h6>Account Info</h6>
-                  <p><strong>Customer:</strong> <span id="modalCustomerName"></span></p>
-                  <p><strong>Savings ID:</strong> <span id="modalSavingsId"></span></p>
-                  <p><strong>Status:</strong> <span id="modalStatus"></span></p>
-                  <p><strong>Total Balance:</strong> ₱<span id="modalTotalBalance"></span></p>
-                  <p><strong>Interest Rate:</strong> <span id="modalInterestRate"></span>%</p>
-                  <p><strong>Account Type:</strong> <span id="modalAccountType"></span></p>
-                  <p><strong>Total Interest Earned:</strong> ₱<span id="modalTotalInterest">0.00</span></p>
+
+                  <!-- PROFILE SECTION -->
+                  <div class="d-flex align-items-center mb-4">
+                    <img id="profileIMG" src="assets/default-avatar.png" class="rounded-circle me-3" width="80"
+                      height="80" alt="Profile Picture">
+                    <div>
+                      <h5 class="mb-0" id="modalCustomerName"></h5>
+                      <small class="text-muted" id="Email"></small><br>
+                      <small class="text-muted" id="Phone"></small>
+                    </div>
+                  </div>
 
                   <hr>
-                  <!-- transaction table -->
-                  <h6>Transactions</h6>
-                  <table class="table table-bordered table-striped table-sm">
-                    <thead>
+
+                  <!-- ACCOUNT INFO -->
+                  <h6 class="fw-bold mb-2">Account Information</h6>
+                  <div class="row mb-3">
+                    <div class="col-md-4"><strong>Address:</strong><br><span id="Address"></span></div>
+                    <div class="col-md-4"><strong>Birthdate:</strong><br><span id="modalBirthdate"></span></div>
+                    <div class="col-md-4"><strong>Account Status:</strong><br><span id="modalUserStatus"></span></div>
+                  </div>
+
+
+                  <hr>
+
+                  <!-- SAVINGS INFO -->
+                  <h6 class="fw-bold mb-2">Savings Information</h6>
+                  <div class="row mb-3">
+                    <div class="col-md-4"><strong>Savings ID:</strong><br><span id="modalSavingsId"></span></div>
+                    <div class="col-md-4"><strong>Account Type:</strong><br><span id="modalAccountType"></span></div>
+                    <div class="col-md-4"><strong>Status:</strong><br><span id="modalStatus"></span></div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <div class="col-md-4"><strong>Balance:</strong><br>₱<span id="modalTotalBalance"></span></div>
+                    <div class="col-md-4"><strong>Interest Rate:</strong><br><span id="modalInterestRate"></span>%</div>
+                    <div class="col-md-4"><strong>Total Interest Earned:</strong><br>₱<span
+                        id="modalTotalInterest">0.00</span></div>
+                  </div>
+
+                  <hr>
+
+                  <!-- TRANSACTIONS -->
+                  <h6 class="fw-bold mb-2">Transactions</h6>
+                  <table class="table table-sm table-striped table-bordered">
+                    <thead class="table-light">
                       <tr>
                         <th>Date</th>
                         <th>Type</th>
@@ -601,12 +738,12 @@ error_reporting(E_ALL);
                     </thead>
                     <tbody id="modalTransactions">
                       <tr>
-                        <td colspan="3" class="text-center">Loading...</td>
+                        <td colspan="4" class="text-center">Loading...</td>
                       </tr>
                     </tbody>
                   </table>
-                </div>
 
+                </div>
               </div>
             </div>
           </div>
@@ -675,7 +812,7 @@ error_reporting(E_ALL);
                         <i class="bi bi-hourglass-split"></i> Pending
                       </button>
 
-                      <button type="submit" name="toggle_status" value="Frozen" class="btn btn-danger">
+                      <button type="submit" name="toggle_status" value=" Frozen" class="btn btn-danger">
                         <i class="bi bi-lock-fill"></i> Frozen
                       </button>
 
@@ -810,7 +947,7 @@ error_reporting(E_ALL);
                       if (mysqli_num_rows($loans_result) > 0) {
                         while ($row = mysqli_fetch_assoc($loans_result)) {
 
-                          $formattedAmount = "$" . number_format($row['amount'], 2);
+                          $formattedAmount = "₱" . number_format($row['amount'], 2);
 
                           // for styling the STATUS column
                           $statusStyle = '';
@@ -875,10 +1012,79 @@ error_reporting(E_ALL);
                   </table>
                 </div>
               </div>
-
               <!-- closing of loans table -->
             </div>
-
+          </div>
+          <!-- modal for reject and accept -->
+          <div class="modal fade" id="confirmModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Confirm Action</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <p id="confirmMessage"></p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancel
+                  </button>
+                  <form method="post">
+                    <input type="hidden" name="loan_id" id="confirmLoanId">
+                    <input type="hidden" name="action" id="confirmAction">
+                    <button type="submit" class="btn btn-primary">
+                      Yes, Confirm
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- modal for + new loan application -->
+          <div class="modal fade" id="loanModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <!-- content -->
+                <form method="post">
+                  <!-- header -->
+                  <div class="modal-header">
+                    <h5 class="modal-title">New Loan Application</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <!-- body -->
+                  <div class="modal-body">
+                    <input type="hidden" name="loan_id">
+                    <div class="mb-3">
+                      <label class="form-label">Customer Name: </label>
+                      <input type="text" name="customer_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Loan Type:</label>
+                      <select name="loan_type" class="form-select" required>
+                        <option value="">--Select Loan Type--</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Home">Home</option>
+                        <option value="Auto">Auto Loan</option>
+                        <option value="Business">Business</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Amount:</label>
+                      <input type="number" name="amount" class="form-control" min="1" step="0.01" required>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                      Cancel
+                    </button>
+                    <button type="submit" name="add_loan" class="btn btn-primary">
+                      Submit Application
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
 
           <!-- modal for reject and accept -->
@@ -962,22 +1168,83 @@ error_reporting(E_ALL);
           </div>
         </section>
 
-        <section id="faq">
-          <h2>FAQS</h2>
-          <!-- savings content -->
-          <!-- Kenneth -->
+        <!-- FAQS  -->
+        <section id="faq" class="flex-grow-2 p-2">
+          <div class="row mb-4 g-3">
+            <div class="col-12 col-md-6 col-lg-8">
+              <h2>FREQUENTLY ASKED QUESTIONS</h2>
+              <h6 class="text-muted">
+                Answer your questions with our useless responses
+              </h6>
+            </div>
+
+            <div class="container py-4 mt-0">
+              <?php foreach ($faqs as $catIndex => $category): ?>
+                <div class="card shadow-sm mb-4">
+                  <div class="card-body">
+                    <h4 class="card-title mb-3"><?= htmlspecialchars($category['category']) ?></h4>
+                    <div class="accordion" id="accordion-<?= $catIndex ?>">
+                      <?php foreach ($category['questions'] as $qIndex => $faq):
+                        $collapseId = "collapse-{$catIndex}-{$qIndex}";
+                        $headingId = "heading-{$catIndex}-{$qIndex}";
+                        ?>
+                        <div class="accordion-item">
+                          <h2 class="accordion-header" id="<?= $headingId ?>">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                              data-bs-target="#<?= $collapseId ?>" aria-expanded="false" aria-controls="<?= $collapseId ?>">
+                              <?= htmlspecialchars($faq['q']) ?>
+                            </button>
+                          </h2>
+                          <div id="<?= $collapseId ?>" class="accordion-collapse collapse"
+                            aria-labelledby="<?= $headingId ?>" data-bs-parent="#accordion-<?= $catIndex ?>">
+                            <div class="accordion-body"><?= htmlspecialchars($faq['a']) ?></div>
+                          </div>
+                        </div>
+                      <?php endforeach; ?>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
         </section>
-        <section id="logout">
-          <h2>Logout</h2>
-          <!-- Kenneth -->
-          <!-- savings content -->
-        </section>
+
+        <!-- LOGOUT -->
+        <!-- Logout Modal -->
+        <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow">
+
+              <!-- Header -->
+              <div class="modal-header bg-light">
+                <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+
+              <!-- Body -->
+              <div class="modal-body">
+                <p class="mb-0">Are you sure you want to log out of your account?</p>
+              </div>
+
+              <!-- Footer -->
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+                <!-- Logout form -->
+                <form action="../admin/php/logout.php" method="POST" class="d-inline">
+                  <input type="hidden" name="logout" value="true">
+                  <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+
+              </div>
+
+            </div>
+          </div>
+        </div>
+
 
       </main>
     </div>
-  </div>
-
-
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="script/script.js"></script>

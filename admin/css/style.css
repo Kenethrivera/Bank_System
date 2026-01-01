@@ -12,8 +12,9 @@ body {
   overflow: hidden;
   min-height: 100vh; /* full viewport height */
   display: flex;
-  flex-direction: column; /* if you want vertical stacking */
+  flex-direction: column; /*VERTICAL STACKING */
 }
+
 
 /* Expand sidebar on hover */
 #sidebar:hover {
@@ -142,17 +143,45 @@ main section.active {
 }
 
 .btn-reject:hover {
-  background-color: #f7c1c1;
+    background-color: #f7c1c1;
+}
+/* Dashboard Cards Backgrounds */
+.bg-purple-custom {
+    background-color: #6f42c1 !important;
 }
 
-/* savings box hover effects */
-.card-hover-effect {
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out !important;
-  cursor: pointer;
-  box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075) !important;
+.bg-red-custom {
+    background-color: red !important;
 }
 
-.card-hover-effect:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 1rem 3rem rgba(0, 0, 0, .175) !important;
+/* Progress Bar Height */
+.progress-custom {
+    height: 8px !important;
+}
+
+/* Modal Header Background */
+.modal-header-bg {
+    height: 130px;
+    background: linear-gradient(to right, #0d6efd, #6610f2); /* optional gradient */
+}
+
+/* Profile Modal Status Dot */
+.status-dot {
+    width: 16px;
+    height: 16px;
+}
+
+/* Buttons in loan actions (optional if you want styling) */
+.btn-action {
+    padding: 4px 10px;
+    margin-right: 4px;
+    border-radius: 4px;
+}
+.btn-accept {
+    background-color: #198754;
+    color: white;
+}
+.btn-reject {
+    background-color: #dc3545;
+    color: white;
 }

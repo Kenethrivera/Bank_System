@@ -1,6 +1,5 @@
 <?php
 $conn = mysqli_connect('localhost', 'root', '', 'bank_db');
-
 if (!$conn) {
     http_response_code(500);
     echo json_encode(['error' => 'Database connection failed']);
@@ -13,14 +12,9 @@ $transactions = [];
 $total_interest = 0;
 
 if ($savings_id) {
-
-    // Transactions
+    // Transactions query
     $stmt = $conn->prepare("
-        SELECT 
-            created_at AS date,
-            transaction_type AS type,
-            amount,
-            balance_after
+        SELECT created_at AS date, transaction_type AS type, amount, balance_after
         FROM savings_transactions
         WHERE savings_id = ?
         ORDER BY created_at
@@ -31,7 +25,7 @@ if ($savings_id) {
 
     while ($row = $result->fetch_assoc()) {
         $row['amount'] = floatval($row['amount']);
-        $row['balance_after'] = floatval($row['balance_after']); // ensures it's a number
+        $row['balance_after'] = floatval($row['balance_after']);
         $transactions[] = $row;
     }
 
@@ -44,7 +38,6 @@ if ($savings_id) {
     $stmt2->bind_param("s", $savings_id);
     $stmt2->execute();
     $interestResult = $stmt2->get_result()->fetch_assoc();
-
     $total_interest = floatval($interestResult['total_interest']);
 }
 
