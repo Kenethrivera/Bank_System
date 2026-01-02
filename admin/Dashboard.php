@@ -1086,6 +1086,86 @@ header("Expires: 0"); // Proxies
               </div>
             </div>
           </div>
+
+          <!-- modal for reject and accept -->
+          <div class="modal fade" id="confirmModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+
+                <div class="modal-header">
+                  <h5 class="modal-title">Confirm Action</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                  <p id="confirmMessage"></p>
+                </div>
+
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Cancel
+                  </button>
+
+                  <form method="post">
+                    <input type="hidden" name="loan_id" id="confirmLoanId">
+                    <input type="hidden" name="action" id="confirmAction">
+                    <button type="submit" class="btn btn-primary">
+                      Yes, Confirm
+                    </button>
+                  </form>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- modal for + new loan application -->
+          <div class="modal fade" id="loanModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <!-- content -->
+                <form method="post">
+
+                  <!-- header -->
+                  <div class="modal-header">
+                    <h5 class="modal-title">New Loan Application</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <!-- body -->
+                  <div class="modal-body">
+                    <input type="hidden" name="loan_id">
+                    <div class="mb-3">
+                      <label class="form-label">Customer Name: </label>
+                      <input type="text" name="customer_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Loan Type:</label>
+                      <select name="loan_type" class="form-select" required>
+                        <option value="">--Select Loan Type--</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Home">Home</option>
+                        <option value="Auto">Auto Loan</option>
+                        <option value="Business">Business</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Amount:</label>
+                      <input type="number" name="amount" class="form-control" min="1" step="0.01" required>
+                    </div>
+                  </div>
+
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                      Cancel
+                    </button>
+                    <button type="submit" name="add_loan" class="btn btn-primary">
+                      Submit Application
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
         </section>
 
         <!-- FAQS  -->

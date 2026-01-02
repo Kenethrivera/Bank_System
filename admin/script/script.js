@@ -22,7 +22,7 @@ document.querySelectorAll('#sidebar .nav-link').forEach(link => {
 
         if (!target.startsWith('#')) return;
 
-        e.preventDefault();
+    e.preventDefault();
 
         window.location.hash = target;
 

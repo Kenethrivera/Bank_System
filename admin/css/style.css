@@ -118,28 +118,28 @@ main section.active {
 
 /* Base style for action buttons */
 .btn-action {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.8em;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-right: 5px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.8em;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-right: 5px;
 }
 
 .btn-accept {
-    background-color: #d4f7d4;
-    color: #2f6627;
+  background-color: #d4f7d4;
+  color: #2f6627;
 }
 
 .btn-accept:hover {
-    background-color: #bee8be; 
+  background-color: #bee8be;
 }
 
 .btn-reject {
-    background-color: #fcdada;
-    color: #a12b2b;
+  background-color: #fcdada;
+  color: #a12b2b;
 }
 
 .btn-reject:hover {
