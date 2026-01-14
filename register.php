@@ -68,7 +68,7 @@
             </div>
             <div class="col-md-6">
               <label class="form-label">Phone</label>
-              <input type="tel" name="phone" class="form-control" required>
+              <input type="tel" maxlength="13" minlength="11" name="phone" class="form-control" required>
             </div>
           </div>
           <div class="row g-3 mt-2">

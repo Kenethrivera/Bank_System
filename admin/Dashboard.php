@@ -1,10 +1,9 @@
 <?php
 session_start();
-
-// Redirect if admin is not logged in
-if (!isset($_SESSION['email'])) {
-  header("Location: ../login.php");
-  exit();
+// Redirect if user is not logged in OR if the role is not 'Admin'
+if (!isset($_SESSION['email']) || $_SESSION['role'] !== 'Admin') {
+    header("Location: ../login.php");
+    exit();
 }
 
 // Prevent caching so browser back button doesn't show logged-in content
@@ -1225,7 +1224,7 @@ if (mysqli_num_rows($accounts_result) > 0) {
                       <select name="customer_id" class="form-select" required>
                         <option value="">-- Select Customer --</option>
                         <?php
-                        $users = mysqli_query($conn, "SELECT ID, FirstName, LastName FROM user_accounts WHERE Status='Approved'");
+                        $users = mysqli_query($conn, "SELECT ID, FirstName, LastName FROM user_accounts WHERE Status='Approved' AND Role='User'");
                         while ($u = mysqli_fetch_assoc($users)) {
                           echo "<option value='{$u['ID']}'>
                 {$u['FirstName']} {$u['LastName']}

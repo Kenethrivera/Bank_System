@@ -11,7 +11,6 @@ if (!$conn) {
     die('Connection Error: ' . mysqli_connect_error());
 }
 
-// THIS MUST MATCH THE 'name' ATTRIBUTE OF YOUR BUTTON
 if (isset($_POST['submit'])) {
     $firstName  = trim(mysqli_real_escape_string($conn, $_POST['firstName']));
     $middleName = trim(mysqli_real_escape_string($conn, $_POST['middleName']));
@@ -23,7 +22,7 @@ if (isset($_POST['submit'])) {
     $password   = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
 
-    // 1. Basic Validations
+    // 1. Password and Age Validation
     if ($password !== $confirmPassword) {
         $errorMessage = "Passwords do not match.";
     }
@@ -31,11 +30,26 @@ if (isset($_POST['submit'])) {
     $today = new DateTime();
     $birthdateObj = new DateTime($birthdate);
     $age = $today->diff($birthdateObj)->y;
-    if ($age < 18) {
+    if (empty($errorMessage) && $age < 18) {
         $errorMessage = "You must be at least 18 years old to register.";
     }
 
-    // 2. Image Handling
+    // 2. Uniqueness Check (Email and Phone)
+    if (empty($errorMessage)) {
+        // We select Email and Phone specifically to compare them in the results
+        $check = mysqli_query($conn, "SELECT Email, Phone FROM user_accounts WHERE Email='$email' OR Phone='$phone' LIMIT 1");
+        
+        if (mysqli_num_rows($check) > 0) {
+            $row = mysqli_fetch_assoc($check);
+            if (strtolower($row['Email']) === strtolower($email)) {
+                $errorMessage = "Email already exists.";
+            } else if ($row['Phone'] === $phone) {
+                $errorMessage = "Phone number already exists.";
+            }
+        }
+    }
+
+    // 3. Image Handling
     $destination = "";
     if (empty($errorMessage)) {
         if (isset($_FILES['img']) && $_FILES['img']['error'] === 0) {
@@ -64,27 +78,16 @@ if (isset($_POST['submit'])) {
         }
     }
 
-    // 3. Unique Email and Phone Check
-    if (empty($errorMessage)) {
-        $check = mysqli_query($conn, "SELECT Email, Phone FROM user_accounts WHERE Email='$email' OR Phone='$phone' LIMIT 1");
-        if (mysqli_num_rows($check) > 0) {
-            $row = mysqli_fetch_assoc($check);
-            if ($row['Email'] === $email) {
-                $errorMessage = "Email already exists.";
-            } else {
-                $errorMessage = "Phone number already exists.";
-            }
-        }
-    }
-
-    // 4. Final Database Insertion
+    // 4. Final Database Insertion and Redirect
     if (empty($errorMessage)) {
         $sql = "INSERT INTO user_accounts 
                 (FirstName, MiddleName, LastName, Email, Phone, Address, birthdate, Password, Img) 
                 VALUES ('$firstName', '$middleName', '$lastName', '$email', '$phone', '$address', '$birthdate', '$password', '$destination')";
         
         if (mysqli_query($conn, $sql)) {
-            $successMessage = "Registration successful! , $firstName $lastName.";
+            // Success! Redirect to login.php
+            header("Location: login.php?msg=Registration successful! Please login.");
+            exit(); // Always use exit() after header redirect
         } else {
             $errorMessage = "Database Error: " . mysqli_error($conn);
         }
