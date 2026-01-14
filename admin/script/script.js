@@ -389,6 +389,50 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+document.querySelectorAll('.view-loan-btn').forEach(button => {
+    button.addEventListener('click', function () {
+        const loanId = this.dataset.loanId;
+
+        document.getElementById('loanDetailsLoading').classList.remove('d-none');
+        document.getElementById('loanDetailsContent').classList.add('d-none');
+
+        fetch('php/get_loan_details_admin.php?loan_id=' + loanId)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loanDetailsLoading').classList.add('d-none');
+                document.getElementById('loanDetailsContent').classList.remove('d-none');
+
+                // Loan Info
+                document.getElementById('ld-loan-id').textContent = data.loan.loan_id;
+                document.getElementById('ld-loan-type').textContent = data.loan.loan_type;
+                document.getElementById('ld-status').textContent = data.loan.Status;
+                document.getElementById('ld-date').textContent = data.loan.application_date;
+                document.getElementById('ld-reason').textContent = data.loan.reason;
+                document.getElementById('ld-total').textContent = '₱' + data.loan.total_amount;
+                document.getElementById('ld-paid').textContent = '₱' + data.loan.paid;
+                document.getElementById('ld-balance').textContent = '₱' + data.loan.balance;
+
+                // Payment Breakdown
+                const tbody = document.getElementById('paymentBreakdownTable');
+                tbody.innerHTML = '';
+
+                data.payments.forEach((p, index) => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${p.due_date}</td>
+                            <td>₱${p.payment_amount}</td>
+                            <td class="fw-bold ${p.status === 'Paid' ? 'text-success' : 'text-warning'}">
+                                ${p.status}
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+    });
+});
+
+
 // ADMIN LOGOUT
 adminLogoutLink.addEventListener('click', function(e) {
     e.preventDefault(); // prevent default anchor behavior

@@ -405,3 +405,94 @@
        .font-monospace {
            font-family: 'Courier New', monospace;
        }
+
+       .stat-card {
+           border-radius: 1rem;
+           overflow: hidden;
+       }
+
+       .stat-card.blue {
+           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+           color: white;
+           padding: 1.5rem;
+           height: 180px;
+           /* Fixed height */
+           display: flex;
+           flex-direction: column;
+           justify-content: space-between;
+       }
+
+       /* Header section */
+       .balance-card-header {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           flex-shrink: 0;
+       }
+
+       /* Body section with balance and icon */
+       .balance-card-body {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           gap: 1rem;
+           flex: 1;
+           overflow: hidden;
+       }
+
+       /* Balance amount with fixed size and scroll if needed */
+       .balance-amount {
+           font-size: 2.5rem;
+           font-weight: bold;
+           line-height: 1.2;
+           overflow: hidden;
+           text-overflow: ellipsis;
+           white-space: nowrap;
+           flex: 1;
+           min-width: 0;
+           /* Important for text truncation */
+       }
+
+       /* Eye icon - always visible */
+       .balance-eye-icon {
+           font-size: 1.5rem;
+           opacity: 0.5;
+           cursor: pointer;
+           flex-shrink: 0;
+           transition: opacity 0.2s;
+       }
+
+       .balance-eye-icon:hover {
+           opacity: 0.8;
+       }
+
+       /* Mobile responsiveness */
+       @media (max-width: 768px) {
+           .stat-card.blue {
+               height: 160px;
+               padding: 1.25rem;
+           }
+
+           .balance-amount {
+               font-size: 2rem;
+           }
+
+           .balance-eye-icon {
+               font-size: 1.25rem;
+           }
+       }
+
+       @media (max-width: 576px) {
+           .stat-card.blue {
+               height: 140px;
+               padding: 1rem;
+           }
+
+           .balance-amount {
+               font-size: 1.75rem;
+           }
+
+           .balance-card-header small {
+               font-size: 0.75rem;
+           }
+       }

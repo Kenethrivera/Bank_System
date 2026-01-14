@@ -238,7 +238,7 @@ function openDepositModal(savingsId, savingsType, currentBalance) {
     document.getElementById('depositAccountId').textContent = savingsId;
     document.getElementById('depositAmount').value = '';
     document.getElementById('depositWarning').style.display = 'none';
-    
+
     const modal = new bootstrap.Modal(document.getElementById('depositModal'));
     modal.show();
 }
@@ -250,19 +250,19 @@ function openWithdrawModal(savingsId, savingsType, currentBalance, maxWithdraw, 
     document.getElementById('withdrawSavingsId').value = savingsId;
     document.getElementById('withdrawAccountName').textContent = savingsType;
     document.getElementById('withdrawAccountId').textContent = savingsId;
-    document.getElementById('withdrawAvailable').textContent = '₱' + currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('withdrawAvailable').textContent = '₱' + currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     document.getElementById('withdrawMaxAmount').value = maxWithdraw;
     document.getElementById('withdrawSavingsType').value = savingsType;
     document.getElementById('withdrawAmount').value = '';
     document.getElementById('withdrawAmount').max = maxWithdraw;
     document.getElementById('withdrawWarning').style.display = 'none';
-    
+
     // Show restriction info for Special accounts
     const restrictionInfo = document.getElementById('withdrawRestrictionInfo');
     const restrictionText = document.getElementById('withdrawRestrictionText');
-    
+
     if (savingsType === 'Special') {
-        restrictionText.textContent = 'Special accounts must maintain a minimum balance of ₱50,000. Maximum withdrawal: ₱' + maxWithdraw.toLocaleString('en-US', {minimumFractionDigits: 2});
+        restrictionText.textContent = 'Special accounts must maintain a minimum balance of ₱50,000. Maximum withdrawal: ₱' + maxWithdraw.toLocaleString('en-US', { minimumFractionDigits: 2 });
         restrictionInfo.style.display = 'block';
     } else if (savingsType === 'Fixed') {
         restrictionText.textContent = 'Fixed accounts have a 3-month lock-in period from creation date.';
@@ -270,7 +270,7 @@ function openWithdrawModal(savingsId, savingsType, currentBalance, maxWithdraw, 
     } else {
         restrictionInfo.style.display = 'none';
     }
-    
+
     const modal = new bootstrap.Modal(document.getElementById('withdrawModal'));
     modal.show();
 }
@@ -643,3 +643,52 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
+
+
+// view loan details modal
+document.querySelectorAll('.view-loan-btn').forEach(button => {
+    button.addEventListener('click', function () {
+        const loanId = this.dataset.loanId;
+
+        document.getElementById('loanDetailsLoading').classList.remove('d-none');
+        document.getElementById('loanDetailsContent').classList.add('d-none');
+
+        fetch('php/get_loan_details.php?loan_id=' + loanId)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loanDetailsLoading').classList.add('d-none');
+                document.getElementById('loanDetailsContent').classList.remove('d-none');
+
+                // Loan Info
+                document.getElementById('ld-loan-id').textContent = data.loan.loan_id;
+                document.getElementById('ld-loan-type').textContent = data.loan.loan_type;
+                document.getElementById('ld-status').textContent = data.loan.Status;
+                document.getElementById('ld-date').textContent = data.loan.application_date;
+                document.getElementById('ld-reason').textContent = data.loan.reason;
+                document.getElementById('ld-total').textContent = '₱' + data.loan.total_amount;
+                document.getElementById('ld-paid').textContent = '₱' + data.loan.paid;
+                document.getElementById('ld-balance').textContent = '₱' + data.loan.balance;
+
+                // Payment Breakdown
+                const tbody = document.getElementById('paymentBreakdownTable');
+                tbody.innerHTML = '';
+
+                data.payments.forEach((p, index) => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${p.due_date}</td>
+                            <td>₱${p.payment_amount}</td>
+                            <td class="fw-bold ${p.status === 'Paid' ? 'text-success' : 'text-warning'}">
+                                ${p.status}
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+    });
+});
+
+
+
