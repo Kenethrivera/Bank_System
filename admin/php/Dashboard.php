@@ -118,7 +118,7 @@ $row = mysqli_fetch_assoc($pending_loan);
 $pendingLoan = $row['PendingLoans'];
 
 /* Get accounts */
-$accounts_result = mysqli_query($conn, "SELECT * FROM user_accounts");
+$accounts_result = mysqli_query($conn, "SELECT * FROM user_accounts Where Role='User'");
 if (!$accounts_result) {
     die("Accounts Query Error: " . mysqli_error($conn));
 }
