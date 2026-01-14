@@ -12,6 +12,7 @@ $userPhone = "+63 917 123 4567";
 $mainAccountNumber = "123-456-7890";
 $totalBalance = 3000.00; // Main Wallet Balance
 
+<<<<<<< Updated upstream
 // --- Savings Accounts Data ---
 // Array of savings accounts to be displayed in the "Savings" tab
 $savingsAccounts = [
@@ -54,6 +55,22 @@ $transactions = [
     ['date' => 'Oct 24', 'desc' => 'Payroll Deposit', 'amount' => 1500.00, 'type' => 'credit', 'icon' => 'bi-briefcase'],
     ['date' => 'Oct 23', 'desc' => 'Starbucks Coffee', 'amount' => -5.50, 'type' => 'debit', 'icon' => 'bi-cup-hot'],
 ];
+=======
+$conn_check = mysqli_connect('localhost', 'root', '', 'bank_db');
+$uid_check = $_SESSION['user_id'];
+$status_query = mysqli_query($conn_check, "SELECT Status FROM user_accounts WHERE ID='$uid_check'");
+$status_row = mysqli_fetch_assoc($status_query);
+
+if ($status_row['Status'] !== 'Approved') {
+    // If user somehow got here but is not approved, kick them back to landing page
+    header("Location: ../account_status.php");
+    exit;
+}
+
+$userId = $_SESSION['user_id'];  // pass this to back_end.php
+include 'php/back_end.php';
+require_once 'php/users_loans_backend.php';
+>>>>>>> Stashed changes
 ?>
 
 <!doctype html>
