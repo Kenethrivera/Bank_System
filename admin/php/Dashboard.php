@@ -1,33 +1,93 @@
 <?php
 $conn = mysqli_connect('localhost', 'root', '', 'bank_db');
-if (!$conn) {
-    die('Connection Error: ' . mysqli_connect_error());
-}
+if (!$conn) { die('Connection Error: ' . mysqli_connect_error()); }
+
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+
+$admin_session_id = $_SESSION['user_id'] ?? 0;
+$admin_query = mysqli_query($conn, "SELECT FirstName, MiddleName, LastName, Email, Role, ID FROM user_accounts WHERE ID = '$admin_session_id'");
+$admin_row = mysqli_fetch_assoc($admin_query);
+
+$adminFullName = $admin_row['FirstName'] . " " . ($admin_row['MiddleName'] ? $admin_row['MiddleName'] . " " : "") . $admin_row['LastName'];
+$email = $admin_row['Email'];
+$role = $admin_row['Role'];
+$empId = "EMP-" . str_pad($admin_row['ID'], 3, '0', STR_PAD_LEFT);
 
 /* =========================
    HANDLE LOAN APPROVE / REJECT
 ========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+
     /* ---- LOAN ACTION ---- */
     if (!empty($_POST['loan_id']) && !empty($_POST['action'])) {
 
         $loan_id = intval($_POST['loan_id']);
+        $action = $_POST['action'];
+        $newStatus = ($action === 'Approved') ? 'Approved' : 'Rejected';
 
-        if ($_POST['action'] === 'Approved') {
-            $newStatus = 'Approved';
-        } else {
-            $newStatus = 'Rejected';
-        }
-
+        // Update loan status
         $stmt = mysqli_prepare($conn, "UPDATE loans SET Status=? WHERE loan_id=?");
         mysqli_stmt_bind_param($stmt, 'si', $newStatus, $loan_id);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
 
+        // Generate payment schedule if approved
+        if ($newStatus === 'Approved') {
+
+            // 1. Get loan info
+            $loanRes = mysqli_query($conn, "SELECT loan_type, amount, application_date FROM loans WHERE loan_id = $loan_id");
+            $loanData = mysqli_fetch_assoc($loanRes);
+
+            $loan_type = $loanData['loan_type'];
+            $amount = $loanData['amount'];
+            $start_date = $loanData['application_date'];
+
+            // 2. Determine number of months per loan type
+            switch ($loan_type) {
+                case 'Personal':
+                    $months = 6;
+                    break;
+                case 'Home':
+                    $months = 10;
+                    break;
+                case 'Auto Loan':
+                    $months = 12; // 1 year
+                    break;
+                case 'Business':
+                    $months = 24; // 2 years
+                    break;
+                default:
+                    $months = 12;
+            }
+
+            // 3. Calculate monthly payment with rounding fix
+            $monthly_payment = round($amount / $months, 2);
+
+            for ($i = 1; $i <= $months; $i++) {
+                $due_date = date('Y-m-d', strtotime("+$i month", strtotime($start_date)));
+
+                // Adjust last payment to match total loan amount exactly
+                if ($i === $months) {
+                    $total_assigned = $monthly_payment * ($months - 1);
+                    $monthly_payment = round($amount - $total_assigned, 2);
+                }
+
+                $stmt = mysqli_prepare(
+                    $conn,
+                    "INSERT INTO loan_payments (loan_id, due_date, payment_amount, status) VALUES (?, ?, ?, 'Pending')"
+                );
+                mysqli_stmt_bind_param($stmt, 'isd', $loan_id, $due_date, $monthly_payment);
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_close($stmt);
+            }
+        }
+
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
+
 
     /* ---- ACCOUNT APPROVE / REJECT ---- */
     if (
@@ -49,33 +109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
         exit;
     }
-    /* ---- ACCOUNT DELETE ---- */
-}
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST'
-    && isset($_POST['delete_account_id'])
-) {
-
-    $accountId = (int) $_POST['delete_account_id'];
-
-    $stmt = mysqli_prepare(
-        $conn,
-        "DELETE FROM user_accounts WHERE ID=?"
-    );
-    mysqli_stmt_bind_param($stmt, 'i', $accountId);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
-
-    header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
-    exit;
 }
 
-/* =========================
-   DASHBOARD DATA
-========================= */
-
+// DASHBOARD DATA
 /* Count customers */
-$total_customers_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts");
+$total_customers_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts Where Role='User'");
 $row = mysqli_fetch_assoc($total_customers_result);
 $totalCustomers = $row['total'];
 
@@ -90,165 +128,451 @@ $row = mysqli_fetch_assoc($pending_loan);
 $pendingLoan = $row['PendingLoans'];
 
 /* Get accounts */
-$accounts_result = mysqli_query($conn, "SELECT * FROM user_accounts");
+$accounts_result = mysqli_query($conn, "SELECT * FROM user_accounts Where Role='User'");
 if (!$accounts_result) {
     die("Accounts Query Error: " . mysqli_error($conn));
 }
 
 /* Get loans */
-$loans_result = mysqli_query($conn, "SELECT * FROM loans ORDER BY application_date DESC");
+$loans_result = mysqli_query(
+    $conn,
+    "SELECT 
+        l.loan_id,
+        l.loan_type,
+        l.amount,
+        l.Status,
+        l.application_date,
+        u.FirstName,
+        u.MiddleName,
+        u.LastName
+     FROM loans l
+     LEFT JOIN user_accounts u ON l.customer_id = u.ID
+     ORDER BY l.application_date DESC"
+);
+
 if (!$loans_result) {
     die("Loans Query Error: " . mysqli_error($conn));
 }
 
 
+
 // adding new loans
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_loan'])) {
-  $customer_name = $_POST['customer_name'];
-  $loan_type = $_POST['loan_type'];
-  $amount = floatval($_POST['amount']);
-  $status = 'Pending';
-  $application_date = date('Y-m-d');
 
-  $get_id = mysqli_query($conn, "SELECT MAX(loan_id) AS max_id FROM loans");
-  $max_id = mysqli_fetch_assoc($get_id);
-  $new_loan_id = $max_id["max_id"] + 1;
+    $customer_id = (int) $_POST['customer_id'];
+    $loan_type = $_POST['loan_type'];
+    $amount = floatval($_POST['amount']);
+    $status = 'Pending';
+    $application_date = date('Y-m-d');
 
-  $stmt = mysqli_prepare($conn, "INSERT INTO loans(loan_id, customer_name, loan_type, amount, Status, application_date) VALUES (?,?,?,?,?,?)");
-  mysqli_stmt_bind_param($stmt, "issdss", $new_loan_id, $customer_name, $loan_type, $amount, $status, $application_date);
-  mysqli_stmt_execute($stmt);
-  mysqli_stmt_close($stmt);
+    $stmt = mysqli_prepare(
+        $conn,
+        "INSERT INTO loans (customer_id, loan_type, amount, Status, application_date)
+         VALUES (?, ?, ?, ?, ?)"
+    );
 
-  header("Location: " . $_SERVER['PHP_SELF'] . '#loan');
-  exit();
+    mysqli_stmt_bind_param(
+        $stmt,
+        "isdss",
+        $customer_id,
+        $loan_type,
+        $amount,
+        $status,
+        $application_date
+    );
+
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+
+    header("Location: " . $_SERVER['PHP_SELF'] . '#loan');
+    exit();
+}
+// ADMIN CREATE
+/* ---- CREATE NEW ADMIN ---- */
+if (isset($_POST['create_admin'])) {
+    // ASSIGN FORM DATA TO VARIABLES FIRST
+    $fname   = mysqli_real_escape_string($conn, $_POST['adm_fname']);
+    $mname   = mysqli_real_escape_string($conn, $_POST['adm_mname'] ?? '');
+    $lname   = mysqli_real_escape_string($conn, $_POST['adm_lname']);
+    $email   = mysqli_real_escape_string($conn, $_POST['adm_email']);
+    $phone   = mysqli_real_escape_string($conn, $_POST['adm_phone']);
+    $dob     = mysqli_real_escape_string($conn, $_POST['adm_dob']);
+    $address = mysqli_real_escape_string($conn, $_POST['adm_address']);
+    $pass    = $_POST['adm_password']; 
+
+    // 1. Handle Image Upload Logic
+    $imgName = "profile/default.jpg"; 
+    
+    if (isset($_FILES['adm_img']) && $_FILES['adm_img']['error'] === 0) {
+        $targetDir = "../profile/"; 
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = "admin_" . time() . "_" . basename($_FILES["adm_img"]["name"]);
+        $targetFilePath = $targetDir . $fileName;
+        $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
+
+        $allowTypes = array('jpg', 'png', 'jpeg', 'gif');
+        if (in_array(strtolower($fileType), $allowTypes)) {
+            if (move_uploaded_file($_FILES["adm_img"]["tmp_name"], $targetFilePath)) {
+                $imgName = "profile/" . $fileName; 
+            }
+        }
+    }
+
+    // 2. Insert into Database
+    $sql = "INSERT INTO user_accounts (FirstName, MiddleName, LastName, Email, Phone, Birthdate, Address, Password, Img, Role, Status, Balance) 
+            VALUES ('$fname', '$mname', '$lname', '$email', '$phone', '$dob', '$address', '$pass', '$imgName', 'Admin', 'Approved', 0.00)";
+
+    if (mysqli_query($conn, $sql)) {
+        header("Location: " . $_SERVER['PHP_SELF'] . "#admin-management");
+        exit();
+    } else {
+        echo "Error: " . mysqli_error($conn);
+    }
 }
 
+// =======
+// ACOUNT MANAGEMENT
+// =========
 
-// SAVINGS ACCOUNTS QUERY
-function getAllSavings($conn)
-{
-  $sql = "
-        SELECT 
-            sa.savings_id,
-            sa.savings_type,
-            sa.status,
-            sa.interest_rate,
-            sa.ID,
-            sa.balance,
-            ua.firstname,
-            ua.lastname
-        FROM savings_accounts sa
-        LEFT JOIN user_accounts ua
-            ON sa.ID = ua.ID
-        ORDER BY sa.status ASC, sa.savings_id DESC
-    ";
+if (isset($_POST['confirm_deposit'])) {
+    $accountId = mysqli_real_escape_string($conn, $_POST['deposit_account_id']);
+    $amount = mysqli_real_escape_string($conn, $_POST['deposit_amount']);
 
-  $result = mysqli_query($conn, $sql);
-
-  if (!$result) {
-    die("Savings Query Error: " . mysqli_error($conn));
-  }
-
-  $savings = [];
-  while ($row = mysqli_fetch_assoc($result)) {
-    $row['full_name'] = trim(($row['firstname'] ?? '') . ' ' . ($row['lastname'] ?? ''));
-    $savings[] = $row;
-  }
-
-  return $savings;
+    if ($amount > 0) {
+        // SQL to increment the balance
+        $sql = "UPDATE user_accounts SET Balance = Balance + $amount WHERE ID = '$accountId'" ;
+        
+        if (mysqli_query($conn, $sql)) {
+            echo "<script>alert('Balance updated successfully!'); window.location.href=window.location.href;</script>";
+        } else {
+            echo "<script>alert('Error updating balance: " . mysqli_error($conn) . "');</script>";
+        }
+    }
 }
 
-$savings_result = getAllSavings($conn);
+// ============================================
+// ADMIN SAVINGS BACKEND - Safe Fixed Version
+// Add this AFTER your existing code, don't replace everything
+// ============================================
 
+// Enable error reporting temporarily to see what's wrong
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-
-// TOTAL ASSSET FOR SAVINGS
-$result = mysqli_query($conn, "SELECT COALESCE(SUM(balance),0) AS total_assets FROM savings_accounts");
-$row = mysqli_fetch_assoc($result);
-$totalAssets = floatval($row['total_assets']);
+// TOTAL ASSET FOR SAVINGS (Keep your original or use this)
+$result = mysqli_query($conn, "SELECT COALESCE(SUM(balance),0) AS total_assets FROM savings_accounts WHERE status = 'Active'");
+if ($result) {
+    $row = mysqli_fetch_assoc($result);
+    $totalAssets = floatval($row['total_assets']);
+} else {
+    $totalAssets = 0;
+}
 
 // TOTAL ACTIVE SAVINGS 
 $result = mysqli_query($conn, "SELECT COUNT(*) AS active_accounts FROM savings_accounts WHERE status = 'Active'");
-$row = mysqli_fetch_assoc($result);
-$activeSavings = intval($row['active_accounts']);
+if ($result) {
+    $row = mysqli_fetch_assoc($result);
+    $activeSavings = intval($row['active_accounts']);
+} else {
+    $activeSavings = 0;
+}
 
-// AVERAGE INTEREST
-$result = mysqli_query($conn, "SELECT COALESCE(AVG(interest_rate),0) AS avg_interest FROM savings_accounts");
-$row = mysqli_fetch_assoc($result);
-$avgInterest = floatval($row['avg_interest']) * 100;
+// AVERAGE INTEREST (now stored as 2.5, 3.5, 5.0 - no need to multiply)
+$result = mysqli_query($conn, "SELECT COALESCE(AVG(interest_rate),0) AS avg_interest FROM savings_accounts WHERE status = 'Active'");
+if ($result) {
+    $row = mysqli_fetch_assoc($result);
+    $avgInterest = number_format(floatval($row['avg_interest']), 2);
+} else {
+    $avgInterest = '0.00';
+}
 
-
-// SETTINGS: CHANGE SAVINGS INTEREST
+// SETTINGS: CHANGE SAVINGS TYPE AND INTEREST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_savings'])) {
-  $savings_id = $_POST['savings_id'];
-  $savings_type = $_POST['savings_type'];
-  $interest_rate = floatval($_POST['interest_rate'] / 100);
+    $savings_id = mysqli_real_escape_string($conn, $_POST['savings_id']);
+    $savings_type = mysqli_real_escape_string($conn, $_POST['savings_type']);
+    
+    // Set interest rate based on savings type
+    $interest_rates = [
+        'Regular' => 2.5,
+        'Fixed' => 3.5,
+        'Special' => 5.0
+    ];
+    
+    $interest_rate = isset($interest_rates[$savings_type]) ? $interest_rates[$savings_type] : 2.5;
 
-  $stmt = mysqli_prepare($conn, "UPDATE savings_accounts SET savings_type=?, interest_rate=? WHERE savings_id=?");
-  mysqli_stmt_bind_param($stmt, "sds", $savings_type, $interest_rate, $savings_id);
-  mysqli_stmt_execute($stmt);
-  mysqli_stmt_close($stmt);
+    $stmt = mysqli_prepare($conn, "UPDATE savings_accounts SET savings_type=?, interest_rate=? WHERE savings_id=?");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "sds", $savings_type, $interest_rate, $savings_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+    }
 
-  header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
-  exit();
+    header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
+    exit();
 }
 
-// LOCK ICON 
+// STATUS CHANGE (Active, Pending, Frozen, Closed)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
-  $savings_id = $_POST['savings_id'];
-  $new_status = $_POST['toggle_status']; // Active or Frozen
+    $savings_id = mysqli_real_escape_string($conn, $_POST['savings_id']);
+    $new_status = trim(mysqli_real_escape_string($conn, $_POST['toggle_status']));
 
-  $stmt = mysqli_prepare($conn, "UPDATE savings_accounts SET status=? WHERE savings_id=?");
-  mysqli_stmt_bind_param($stmt, "ss", $new_status, $savings_id);
-  mysqli_stmt_execute($stmt);
-  mysqli_stmt_close($stmt);
+    $stmt = mysqli_prepare($conn, "UPDATE savings_accounts SET status=? WHERE savings_id=?");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "ss", $new_status, $savings_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+    }
 
-  header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
-  exit();
+    header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
+    exit();
+}
+/* 1. Dashboard View (Limited to 5) */
+/* 1. DATA FOR THE DASHBOARD CARD (TOP 5 ONLY) */
+$recent_query = "SELECT t.*, u.FirstName, u.LastName 
+                 FROM transactions t 
+                 LEFT JOIN user_accounts u ON t.user_id = u.ID 
+                 ORDER BY t.created_at DESC LIMIT 5";
+$recent_result = mysqli_query($conn, $recent_query);
+
+/* 2. DATA FOR THE MODAL (EVERYTHING) */
+$all_query = "SELECT t.*, u.FirstName, u.LastName 
+              FROM transactions t 
+              LEFT JOIN user_accounts u ON t.user_id = u.ID 
+              ORDER BY t.created_at DESC";
+$all_result = mysqli_query($conn, $all_query);
+//=============================
+// DELTE ACCOIUNT
+//============================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
+    $id = intval($_POST['delete_account_id']);
+    $action = $_POST['action_type'];
+
+    if ($action === 'delete') {
+        // PERMANENT DATABASE DELETION
+        $query = "DELETE FROM user_accounts WHERE ID = $id";
+    } else {
+        // REJECTION ONLY
+        $reason = mysqli_real_escape_string($conn, $_POST['reason']);
+        $query = "UPDATE user_accounts SET Status = 'Rejected', RejectionReason = '$reason' WHERE ID = $id";
+    }
+
+    if (mysqli_query($conn, $query)) {
+        header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
+        exit();
+    } else {
+        echo "Database Error: " . mysqli_error($conn);
+    }
 }
 
-// QUERY FOR NEW SAVINGS APPLICATION
+
+// FETCH TRANSACTION SECTION
+
+$manage_trans_query = "
+    SELECT t.*, u.FirstName, u.LastName 
+    FROM transactions t
+    LEFT JOIN user_accounts u ON t.user_id = u.ID
+    ORDER BY t.created_at DESC";
+$manage_trans_result = mysqli_query($conn, $manage_trans_query);
+
+// ======================================================
+// Dashboard
+// ======================================================
+// 1. Get Total Balance of all users
+$balance_query = mysqli_query($conn, "SELECT SUM(Balance) AS total_sum FROM user_accounts Where Status='Approved'");
+$balance_data = mysqli_fetch_assoc($balance_query);
+$totalBalance = $balance_data['total_sum'] ?? 0;
+
+// 2. Count Savings Accounts (from your savings_accounts table)
+$savings_count_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM savings_accounts");
+$totalSavings = mysqli_fetch_assoc($savings_count_query)['total'];
+
+// 3. Count Regular User Accounts (Checking)
+$checking_count_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts WHERE Role = 'Admin'");
+$totalChecking = mysqli_fetch_assoc($checking_count_query)['total'];
+
+// 4. Calculate Progress Bar (Ratio of Savings to Total Accounts)
+$total_all = $totalSavings + $totalChecking;
+$progressPercent = ($total_all > 0) ? ($totalSavings / $total_all) * 100 : 0;
+// =======================================================
+// NEW SAVINGS APPLICATION (ADMIN) — FRONTEND SAFE
+// =======================================================
+
+// =======================================================
+// AJAX: GET CUSTOMER BALANCE (FRONTEND ONLY)
+// =======================================================
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['get_balance'], $_GET['id'])) {
+
+    header('Content-Type: application/json');
+
+    $customer_id = intval($_GET['id']);
+
+    $stmt = mysqli_prepare($conn, "SELECT Balance FROM user_accounts WHERE ID = ?");
+    mysqli_stmt_bind_param($stmt, "i", $customer_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $balance);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+
+    echo json_encode([
+        'balance' => $balance !== null ? (float) $balance : 0
+    ]);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_savings'])) {
-  $customer_id = $_POST['ID'];
-  $savings_type = $_POST['savings_type'];
-  $initial_deposit = floatval($_POST['initial_deposit']);
 
-  // Set default interest rates
-  $rates = ['Regular' => 0.05, 'Fixed' => 0.08, 'Special' => 0.10];
-  $interest_rate = $rates[$savings_type] ?? 0.05;
+    $_SESSION['savings_error'] = null;
+    $_SESSION['savings_success'] = null;
 
-  // New savings_id
-  $result = mysqli_query($conn, "SELECT savings_id FROM savings_accounts ORDER BY savings_id DESC LIMIT 1");
-  $row = mysqli_fetch_assoc($result);
+    $customer_id = intval($_POST['ID']);
+    $savings_type = $_POST['savings_type'];
+    $initial_deposit = floatval($_POST['initial_deposit']);
 
-  if ($row) {
-    // Extract numeric part
-    $lastNum = intval(substr($row['savings_id'], 4)); // skip 'SAV-'
-    $newNum = $lastNum + 1;
-  } else {
-    $newNum = 1; // first savings account
-  }
+    // -------------------------------
+    // Minimum deposit per savings type
+    // -------------------------------
+    $minimum_deposits = [
+        'Regular' => 100,
+        'Fixed' => 1000,
+        'Special' => 50000
+    ];
 
-  // Format with leading zeros
-  $new_savings_id = 'SAV-' . str_pad($newNum, 3, '0', STR_PAD_LEFT);
+    $required_min = $minimum_deposits[$savings_type] ?? 100;
 
-  // Insert
-  $stmt = mysqli_prepare($conn, "INSERT INTO savings_accounts (savings_id, ID, savings_type, interest_rate, balance) VALUES (?,?,?,?,?)");
-  mysqli_stmt_bind_param($stmt, "sisdd", $new_savings_id, $customer_id, $savings_type, $interest_rate, $initial_deposit);
-  mysqli_stmt_execute($stmt);
+    if ($initial_deposit < $required_min) {
+        $_SESSION['savings_error'] =
+            "Minimum initial deposit for {$savings_type} Savings is ₱" . number_format($required_min, 2);
+        header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
+        exit();
+    }
 
-  header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
-  exit();
+    // -------------------------------
+    // Fetch customer balance
+    // -------------------------------
+    $stmt = mysqli_prepare($conn, "SELECT Balance FROM user_accounts WHERE ID = ?");
+    mysqli_stmt_bind_param($stmt, "i", $customer_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $current_balance);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+
+    if ($current_balance === null) {
+        $_SESSION['savings_error'] = "Customer not found.";
+        header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
+        exit();
+    }
+
+    // -------------------------------
+    // Balance sufficiency check
+    // -------------------------------
+    if ($current_balance < $initial_deposit) {
+        $_SESSION['savings_error'] =
+            "Insufficient balance. Available balance is ₱" . number_format($current_balance, 2);
+        header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
+        exit();
+    }
+
+    // -------------------------------
+    // Interest rates
+    // -------------------------------
+    $interest_rates = [
+        'Regular' => 2.5,
+        'Fixed' => 3.5,
+        'Special' => 5.0
+    ];
+
+    $interest_rate = $interest_rates[$savings_type] ?? 2.5;
+
+    $savings_id = 'SAV' . str_pad($customer_id, 4, '0', STR_PAD_LEFT) . substr(uniqid(), -3);
+
+    // -------------------------------
+    // TRANSACTION
+    // -------------------------------
+    mysqli_begin_transaction($conn);
+
+    try {
+
+        $new_balance = $current_balance - $initial_deposit;
+
+        $stmt = mysqli_prepare($conn, "UPDATE user_accounts SET Balance=? WHERE ID=?");
+        mysqli_stmt_bind_param($stmt, "di", $new_balance, $customer_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        $stmt = mysqli_prepare($conn, "
+            INSERT INTO savings_accounts 
+                (savings_id, ID, savings_type, interest_rate, balance, status)
+            VALUES (?, ?, ?, ?, ?, 'Pending')
+        ");
+        mysqli_stmt_bind_param(
+            $stmt,
+            "sisdd",
+            $savings_id,
+            $customer_id,
+            $savings_type,
+            $interest_rate,
+            $initial_deposit
+        );
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        mysqli_commit($conn);
+
+        $_SESSION['savings_success'] = "Savings account created successfully!";
+        header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
+        exit();
+
+    } catch (Exception $e) {
+        mysqli_rollback($conn);
+        $_SESSION['savings_error'] = "Failed to create savings account.";
+        header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
+        exit();
+    }
 }
 
-// GET ALL USERS FOR SAVINGS NAMES
-$users = [];
-$result = mysqli_query($conn, "SELECT ID, firstname, lastname FROM user_accounts ORDER BY firstname, lastname");
-while ($row = mysqli_fetch_assoc($result)) {
-  $users[] = $row;
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+
+$savingsSql = "
+SELECT 
+    s.savings_id,
+    s.savings_type,
+    s.status,
+    s.interest_rate,
+    s.balance,
+    s.created_at,
+    s.ID,
+    CONCAT(u.FirstName, ' ', u.LastName) AS full_name,
+    u.Email,
+    u.Phone,
+    u.Address,
+    u.Birthdate,
+    u.Status AS UserStatus,
+    u.Img
+FROM savings_accounts s
+INNER JOIN user_accounts u ON u.ID = s.ID
+WHERE 1=1
+";
+
+if (!empty($search)) {
+    $search_safe = mysqli_real_escape_string($conn, $search);
+    $savingsSql .= " AND CONCAT(u.FirstName, ' ', u.LastName) LIKE '%$search_safe%'";
 }
 
-//<?php
+$savingsSql .= " ORDER BY s.created_at DESC";
+
+$result = mysqli_query($conn, $savingsSql);
+
+$savings_result = [];
+if ($result) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $savings_result[] = $row;
+    }
+}
+
+
 // REUSABLE SEARCH FUNCTION
 function buildNameSearch($search, $columnName)
 {
@@ -263,8 +587,8 @@ function buildNameSearch($search, $columnName)
     }
 
     return [
-        'where'  => " AND $columnName LIKE ? ",
-        'types'  => 's',
+        'where' => " AND $columnName LIKE ? ",
+        'types' => 's',
         'params' => ['%' . $search . '%']
     ];
 }
@@ -278,7 +602,12 @@ function executeQuery($conn, $sql, $searchData = null)
         die('MySQL prepare error: ' . mysqli_error($conn));
     }
 
-    if ($searchData && $searchData['types'] !== '') {
+    // ✅ ONLY bind if SQL actually has placeholders
+    if (
+        $searchData &&
+        $searchData['types'] !== '' &&
+        substr_count($sql, '?') === strlen($searchData['types'])
+    ) {
         mysqli_stmt_bind_param(
             $stmt,
             $searchData['types'],
@@ -290,15 +619,28 @@ function executeQuery($conn, $sql, $searchData = null)
     return mysqli_stmt_get_result($stmt);
 }
 
+
 // GET SEARCH INPUT
 $search = $_GET['search'] ?? '';
 
 // --- LOANS SEARCH ---
-$loanSearchData = buildNameSearch($search, 'l.customer_name');
+$loanSearchData = buildNameSearch(
+    $search,
+    "CONCAT(u.FirstName,' ',IFNULL(u.MiddleName,''),' ',u.LastName)"
+);
 
 $loanSql = "
-    SELECT *
+    SELECT 
+        l.loan_id,
+        l.loan_type,
+        l.amount,
+        l.Status,
+        l.application_date,
+        u.FirstName,
+        u.MiddleName,
+        u.LastName
     FROM loans l
+    LEFT JOIN user_accounts u ON l.customer_id = u.ID
     WHERE 1=1
     {$loanSearchData['where']}
     ORDER BY l.application_date DESC
@@ -309,24 +651,12 @@ $loans_result = executeQuery($conn, $loanSql, $loanSearchData);
 // --- SAVINGS SEARCH ---
 $savingsSearchData = buildNameSearch($search, "CONCAT(u.firstname, ' ', u.lastname)");
 
-$savingsSql = "
-    SELECT 
-        s.*,
-        u.FirstName,
-        u.LastName,
-        u.Email,
-        u.Phone,
-        u.Address,
-        u.Birthdate,
-        u.Status AS UserStatus,
-        u.Img,
-        CONCAT(u.FirstName, ' ', u.LastName) AS full_name
-    FROM savings_accounts s
-    JOIN user_accounts u ON s.ID = u.ID
-    WHERE 1=1
-    {$savingsSearchData['where']}
-";
-$savings_result = executeQuery($conn, $savingsSql, $savingsSearchData);
+
+if (!empty($search)) {
+    $result = executeQuery($conn, $savingsSql, $savingsSearchData);
+} else {
+    $result = executeQuery($conn, $savingsSql);
+}
 
 $faqs = [
     [
