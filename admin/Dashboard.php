@@ -148,28 +148,36 @@ header("Expires: 0"); // Proxies
             </div>
             <div class="row g-4">
               <div class="col-lg-6">
-                <div class="card p-4">
-                  <h5 class="fw-semibold mb-3">Account Balances</h5>
-                  <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Total Balance</span>
-                    <span class="fs-4 fw-bold">$45,230.00</span>
-                  </div>
-                  <div class="progress mb-4" style="height:8px;">
-                    <div class="progress-bar bg-success" style="width:75%"></div>
-                  </div>
+  <div class="card p-4">
+    <h5 class="fw-semibold mb-3">Account Balances</h5>
+    
+    <div class="d-flex justify-content-between mb-2">
+      <span class="text-muted">Total Bank Deposits</span>
+      <span class="fs-4 fw-bold">₱<?php echo number_format($totalBalance, 2); ?></span>
+    </div>
+    
+    <div class="progress mb-4" style="height:8px;">
+      <div class="progress-bar bg-success" 
+           role="progressbar" 
+           style="width: <?php echo $progressPercent; ?>%" 
+           aria-valuenow="<?php echo $progressPercent; ?>" 
+           aria-valuemin="0" 
+           aria-valuemax="100">
+      </div>
+    </div>
 
-                  <div class="row border-top pt-3">
-                    <div class="col">
-                      <small class="text-muted">Savings Accounts</small>
-                      <h5 class="fw-semibold">42</h5>
-                    </div>
-                    <div class="col">
-                      <small class="text-muted">Checking Accounts</small>
-                      <h5 class="fw-semibold">43</h5>
-                    </div>
-                  </div>
-                </div>
-              </div>
+    <div class="row border-top pt-3">
+      <div class="col">
+        <small class="text-muted">Savings Accounts</small>
+        <h5 class="fw-semibold"><?php echo $totalSavings; ?></h5>
+      </div>
+      <div class="col">
+        <small class="text-muted">User Accounts</small>
+        <h5 class="fw-semibold"><?php echo $totalChecking; ?></h5>
+      </div>
+    </div>
+  </div>
+</div>
     <div class="col-lg-6">
     <div class="card p-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -247,70 +255,85 @@ header("Expires: 0"); // Proxies
                   </thead>
                   <tbody>
                     <?php
-                    if (mysqli_num_rows($accounts_result) > 0) {
-                      while ($row = mysqli_fetch_assoc($accounts_result)) {
+if (mysqli_num_rows($accounts_result) > 0) {
+    while ($row = mysqli_fetch_assoc($accounts_result)) {
+        // Build data
+        $fullName = $row['FirstName'] . " " . ($row['MiddleName'] ? $row['MiddleName'] . " " : "") . $row['LastName'];
+        $accountNumber = "ACC-" . str_pad($row['ID'], 5, '0', STR_PAD_LEFT);
 
-                        // Build full name
-                        $fullName = $row['FirstName'] . " " . ($row['MiddleName'] ? $row['MiddleName'] . " " : "") . $row['LastName'];
+        // Escape data for HTML attributes
+        $fullNameEsc = htmlspecialchars($fullName, ENT_QUOTES);
+        $emailEsc = htmlspecialchars($row['Email'], ENT_QUOTES);
+        $phoneEsc = htmlspecialchars($row['Phone'], ENT_QUOTES);
+        $dobEsc = htmlspecialchars($row['Birthdate'], ENT_QUOTES);
+        $addressEsc = htmlspecialchars($row['Address'], ENT_QUOTES);
+        $statusEsc = htmlspecialchars($row['Status'], ENT_QUOTES);
+        $ImgEsc = htmlspecialchars($row['Img'], ENT_QUOTES);
 
-                        $accountNumber = "ACC-" . str_pad($row['ID'], 5, '0', STR_PAD_LEFT);
+        // Class and Balance Logic
+        if ($row['Status'] === 'Approved') {
+            $statusClass = 'status-pill status-approved';
+            $balanceDisplay = '₱ ' . number_format($row['Balance'], 2);
+            $balanceClass = 'fw-semibold text-success';
+        } elseif ($row['Status'] === 'Pending') {
+            $statusClass = 'status-pill status-pending';
+            $balanceDisplay = '— — — — —';
+            $balanceClass = 'text-muted';
+        } else {
+            $statusClass = 'status-pill status-rejected';
+            $balanceDisplay = '— — — — —';
+            $balanceClass = 'text-muted';
+        }
 
-                        if ($row['Status'] === 'Approved') {
-                          $statusClass = 'status-pill status-approved';
-                        } elseif ($row['Status'] === 'Pending') {
-                          $statusClass = 'status-pill status-pending';
-                        } elseif ($row['Status'] === 'Rejected') {
-                          $statusClass = 'status-pill status-rejected';
-                        }
-                        $fullNameEsc = htmlspecialchars($fullName, ENT_QUOTES);
-                        $emailEsc = htmlspecialchars($row['Email'], ENT_QUOTES);
-                        $phoneEsc = htmlspecialchars($row['Phone'], ENT_QUOTES);
-                        $dobEsc = htmlspecialchars($row['Birthdate'], ENT_QUOTES);
-                        $addressEsc = htmlspecialchars($row['Address'], ENT_QUOTES);
-                        $statusEsc = htmlspecialchars($row['Status'], ENT_QUOTES);
-                        $ImgEsc = htmlspecialchars($row['Img'], ENT_QUOTES);
-                        if ($row['Status'] === 'Approved') {
-                          $balanceDisplay = '₱ ' . number_format($row['Balance'], 2);
-                          $balanceClass = 'fw-semibold text-success';
-                        } else {
-                          $balanceDisplay = '— — — — —';
-                          $balanceClass = 'text-muted';
-                        }
+        // --- BUTTON LOGIC ---
+        // Only show View button if status is NOT Rejected
+        $viewButton = "";
+        if ($row['Status'] !== 'Rejected') {
+            $viewButton = "
+                <button type='button' class='btn btn-sm btn-outline-info me-1 view-profile-btn' 
+                        data-bs-toggle='modal' 
+                        data-bs-target='#profileModal'
+                        data-id='{$row['ID']}'
+                        data-name='{$fullNameEsc}'
+                        data-email='{$emailEsc}'
+                        data-phone='{$phoneEsc}'
+                        data-dob='{$dobEsc}'
+                        data-address='{$addressEsc}'
+                        data-status='{$statusEsc}'
+                        data-img='{$ImgEsc}'>
+                    <i class='bi bi-eye'></i>
+                </button>";
+        }
 
-                        echo "<tr data-account='{$accountNumber}' data-name='{$fullNameEsc}' >
-                                  <td>{$accountNumber}</td>
-                                  <td>{$fullNameEsc}</td>
-                                  <td>{$emailEsc}</td>
-                                  <td class='{$balanceClass}'>{$balanceDisplay}</td>
-                                  <td><span class='{$statusClass}'>{$statusEsc}</span></td>
-                                  <td class='text-center'>
-                                      <button type='button' class='btn btn-sm btn-outline-info me-1 view-profile-btn' 
-                                              data-bs-toggle='modal' 
-                                              data-bs-target='#profileModal'
-                                              data-id='{$row['ID']}'
-                                              data-name='{$fullNameEsc}'
-                                              data-email='{$emailEsc}'
-                                              data-phone='{$phoneEsc}'
-                                              data-dob='{$dobEsc}'
-                                              data-address='{$addressEsc}'
-                                              data-status='{$statusEsc}'
-                                              data-img='{$ImgEsc}'>
-                                              
-                                              <i class='bi bi-eye'></i>
-                                      </button>
-                                       <form method='POST' onsubmit=\"return confirm('Are you sure you want to delete this account? This action cannot be undone.');\" style='display:inline;'>
-                                        <input type='hidden' name='delete_account_id' value='{$row['ID']}'>
-                                        <button type='submit' class='btn btn-sm btn-outline-danger'>
-                                          <i class='bi bi-trash'></i>
-                                        </button>
-                                      </form>
-                                  </td>
-                                </tr>";
-                      }
-                    } else {
-                      echo "<tr><td colspan='6'>No Customers Found</td></tr>";
-                    }
-                    ?>
+        // Trash button always shows (used for Rejecting Pending or Deleting Rejected)
+        $deleteButton = "
+            <button type='button' class='btn btn-sm btn-outline-danger' 
+                    data-bs-toggle='modal' 
+                    data-bs-target='#deleteReasonModal' 
+                    data-id='{$row['ID']}'
+                    data-name='{$fullNameEsc}'>
+                <i class='bi bi-trash'></i>
+            </button>";
+        ?>
+
+        <tr data-account="<?php echo $accountNumber; ?>" data-name="<?php echo $fullNameEsc; ?>">
+            <td><?php echo $accountNumber; ?></td>
+            <td><?php echo $fullNameEsc; ?></td>
+            <td><?php echo $emailEsc; ?></td>
+            <td class="<?php echo $balanceClass; ?>"><?php echo $balanceDisplay; ?></td>
+            <td><span class="<?php echo $statusClass; ?>"><?php echo $statusEsc; ?></span></td>
+            <td class="text-center">
+                <?php echo $viewButton; ?>
+                <?php echo $deleteButton; ?>
+            </td>
+        </tr>
+
+    <?php 
+    } 
+} else {
+    echo "<tr><td colspan='6' class='text-center'>No Customers Found</td></tr>";
+}
+?>
                   </tbody>
 
                 </table>
@@ -318,6 +341,28 @@ header("Expires: 0"); // Proxies
             </div>
           </div>
         </section>
+        <div class="modal fade" id="deleteReasonModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Delete Account / Reject Application</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="delete_account_id" id="deleteTargetId">
+                    <label class="form-label fw-bold">Reason for Rejection/Deletion</label>
+                    <textarea name="reason" class="form-control" placeholder="Explain why this account is being removed..." required></textarea>
+                    <p class="text-muted small mt-2">This reason will be visible to the user on their status page.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="confirm_delete" class="btn btn-danger">Confirm Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
         <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content rounded-4 overflow-hidden shadow-lg">
@@ -380,17 +425,23 @@ header("Expires: 0"); // Proxies
 
                 </div>
                 <form method="POST">
-                  <input type="hidden" name="account_id" id="modalAccountId">
+  <input type="hidden" name="account_id" id="modalAccountId">
 
-                  <div class="d-flex flex-column flex-md-row gap-3 pt-4 border-top mt-4">
-                    <button type="submit" name="update_status" value="Rejected" class="btn btn-outline-danger w-100">
-                      <i class="bi bi-x-circle me-2"></i>Reject
-                    </button>
-                    <button type="submit" name="update_status" value="Approved" class="btn btn-success w-100">
-                      <i class="bi bi-check-circle me-2"></i>Approve
-                    </button>
-                  </div>
-                </form>
+  <div id="decisionButtons" class="d-flex flex-column flex-md-row gap-3 pt-4 border-top mt-4">
+    <button type="submit" name="update_status" value="Rejected" class="btn btn-outline-danger w-100">
+      <i class="bi bi-x-circle me-2"></i>Reject
+    </button>
+    <button type="submit" name="update_status" value="Approved" class="btn btn-success w-100">
+      <i class="bi bi-check-circle me-2"></i>Approve
+    </button>
+  </div>
+  
+  <div id="alreadyApprovedMsg" class="mt-4 text-center d-none">
+     <span class="badge bg-success-subtle text-success p-2 w-100 border border-success">
+       <i class="bi bi-patch-check-fill me-2"></i>Account is already Approved
+     </span>
+  </div>
+</form>
               </div>
             </div>
           </div>

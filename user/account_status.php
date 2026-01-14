@@ -8,9 +8,9 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// 2. Fetch latest status
+// 2. Fetch latest status AND the rejection reason
 $userId = $_SESSION['user_id'];
-$query = "SELECT FirstName, LastName, Status FROM user_accounts WHERE ID = '$userId'";
+$query = "SELECT FirstName, LastName, Status, RejectionReason FROM user_accounts WHERE ID = '$userId'";
 $result = mysqli_query($conn, $query);
 $user = mysqli_fetch_assoc($result);
 
@@ -57,17 +57,24 @@ if (isset($_GET['logout'])) {
             </div>
 
             <p class="text-muted mb-4">
-                <?php if ($user['Status'] === 'Pending'): ?>
-                    Hello, <strong><?php echo htmlspecialchars($user['FirstName']); ?></strong>. 
-                    Your account has been created successfully but is currently under review by our administrators. 
-                    Please check back later.
-                <?php else: ?>
-                    Hello, <strong><?php echo htmlspecialchars($user['FirstName']); ?></strong>. 
-                    Unfortunately, your account application has been rejected by our administrators. 
-                    Please contact support for more details.
-                <?php endif; ?>
-            </p>
+    <?php if ($user['Status'] === 'Pending'): ?>
+        Hello, <strong><?php echo htmlspecialchars($user['FirstName']); ?></strong>. 
+        Your account has been created successfully but is currently under review by our administrators. 
+        Please check back later.
+    <?php else: ?>
+        Hello, <strong><?php echo htmlspecialchars($user['FirstName']); ?></strong>. 
+        Unfortunately, your account application has been rejected by our administrators.
+        
+        <?php if (!empty($user['RejectionReason'])): ?>
+            <div class="mt-3 p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded text-start">
+                <small class="text-danger fw-bold text-uppercase d-block mb-1">Reason for Rejection:</small>
+                <span class="text-dark small"><?php echo htmlspecialchars($user['RejectionReason']); ?></span>
+            </div>
+        <?php endif; ?>
 
+        <p class="mt-3 small">Please contact support for more details.</p>
+    <?php endif; ?>
+</p>
             <div class="d-grid gap-2">
                 <a href="account_status.php" class="btn btn-primary">
                     <i class="bi bi-arrow-clockwise me-2"></i>Refresh Status

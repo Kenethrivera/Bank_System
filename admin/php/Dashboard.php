@@ -101,27 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// account Delete
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST'
-    && isset($_POST['delete_account_id'])
-) {
-
-    $accountId = (int) $_POST['delete_account_id'];
-
-    $stmt = mysqli_prepare(
-        $conn,
-        "DELETE FROM user_accounts WHERE ID=?"
-    );
-    mysqli_stmt_bind_param($stmt, 'i', $accountId);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
-
-    header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
-    exit;
-}
-
-
 // DASHBOARD DATA
 /* Count customers */
 $total_customers_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts");
@@ -289,6 +268,54 @@ $all_query = "SELECT t.*, u.FirstName, u.LastName
               LEFT JOIN user_accounts u ON t.user_id = u.ID 
               ORDER BY t.created_at DESC";
 $all_result = mysqli_query($conn, $all_query);
+//=============================
+// DELTE ACCOIUNT
+//============================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
+    
+    $id = intval($_POST['delete_account_id']);
+    $reason = mysqli_real_escape_string($conn, $_POST['reason']);
+
+    // We use UPDATE instead of DELETE so the user can see the reason on their status page
+    $query = "UPDATE user_accounts SET Status = 'Rejected', RejectionReason = '$reason' WHERE ID = $id";
+    
+    if (mysqli_query($conn, $query)) {
+        header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
+        exit();
+    } else {
+        echo "Error updating record: " . mysqli_error($conn);
+    }
+}
+
+// Handle Approval (Make sure to clear reason if previously rejected)
+if (isset($_POST['update_status']) && $_POST['update_status'] === 'Approved') {
+    $id = intval($_POST['account_id']);
+    
+    $query = "UPDATE user_accounts SET Status = 'Approved', RejectionReason = NULL WHERE ID = $id";
+    mysqli_query($conn, $query);
+    
+    header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
+    exit();
+}
+// ======================================================
+// FOR TOTAL BALANCE OF ADMIN
+// ======================================================
+// 1. Get Total Balance of all users
+$balance_query = mysqli_query($conn, "SELECT SUM(Balance) AS total_sum FROM user_accounts");
+$balance_data = mysqli_fetch_assoc($balance_query);
+$totalBalance = $balance_data['total_sum'] ?? 0;
+
+// 2. Count Savings Accounts (from your savings_accounts table)
+$savings_count_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM savings_accounts");
+$totalSavings = mysqli_fetch_assoc($savings_count_query)['total'];
+
+// 3. Count Regular User Accounts (Checking)
+$checking_count_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts WHERE Role = 'User'");
+$totalChecking = mysqli_fetch_assoc($checking_count_query)['total'];
+
+// 4. Calculate Progress Bar (Ratio of Savings to Total Accounts)
+$total_all = $totalSavings + $totalChecking;
+$progressPercent = ($total_all > 0) ? ($totalSavings / $total_all) * 100 : 0;
 // =======================================================
 // NEW SAVINGS APPLICATION (ADMIN) — FRONTEND SAFE
 // =======================================================

@@ -33,6 +33,21 @@ document.querySelectorAll('#sidebar .nav-link').forEach(link => {
 document.addEventListener('DOMContentLoaded', showSectionFromHash);
 
 
+document.querySelectorAll('.view-profile-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const status = this.getAttribute('data-status');
+        const buttons = document.getElementById('decisionButtons');
+        const message = document.getElementById('decisionMadeMsg');
+        
+        if (status === 'Pending') {
+            buttons.classList.remove('d-none');
+            message.classList.add('d-none');
+        } else {
+            buttons.classList.add('d-none');
+            message.classList.remove('d-none');
+        }
+    });
+});
 document.addEventListener('DOMContentLoaded', () => {
 
     const modalName = document.getElementById('modalName');
@@ -387,7 +402,23 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = !valid;
     }
 });
+// DELTE USERS
+// Listener for the Delete Reason Modal
+const deleteReasonModal = document.getElementById('deleteReasonModal');
 
+if (deleteReasonModal) {
+    deleteReasonModal.addEventListener('show.bs.modal', function (event) {
+        // Button that triggered the modal
+        const button = event.relatedTarget; 
+        
+        // Extract ID from data-id attribute of the button
+        const accountId = button.getAttribute('data-id');
+        
+        // Update the modal's hidden input value
+        const idInput = document.getElementById('deleteTargetId');
+        idInput.value = accountId;
+    });
+}
 
 // ADMIN LOGOUT
 adminLogoutLink.addEventListener('click', function(e) {

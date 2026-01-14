@@ -23,7 +23,7 @@
           <p class="text-muted mb-0">Sign in to your account</p>
         </div><?php 
 if (isset($_GET['error'])) {
-    $msg = 'Invalid credentials or account inactive.';
+    $msg = 'Invalid credentials.';
     echo '<div class="alert alert-danger" role="alert"><i class="bi bi-shield-lock-fill me-2"></i>' . htmlspecialchars($msg) . '</div>';
 }
 ?>
