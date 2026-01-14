@@ -228,11 +228,14 @@ header("Expires: 0"); // Proxies
           <div class="container-fluid">
 
             <div class="d-flex justify-content-between align-items-center mb-4">
-              <div>
-                <h2 class="fw-bold mb-0">Account Management</h2>
-                <small class="text-muted">Manage savings and checking accounts</small>
-              </div>
-            </div>
+  <div>
+    <h2 class="fw-bold mb-0">Account Management</h2>
+    <small class="text-muted">Manage savings and checking accounts</small>
+  </div>
+  <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#depositModal">
+    <i class="bi bi-plus-circle me-2"></i>Add Money
+  </button>
+</div>
             <div class="card p-3 mb-4">
               <div class="input-group">
                 <span class="input-group-text bg-white">
@@ -369,6 +372,45 @@ if (mysqli_num_rows($accounts_result) > 0) {
         </div>
     </div>
 </div>
+<div class="modal fade" id="depositModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">Deposit / Add Money</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Select Account</label>
+            <select name="deposit_account_id" class="form-select" required>
+              <option value="">-- Choose Customer --</option>
+              <?php
+              // Re-fetch approved users for the dropdown
+              $user_query = mysqli_query($conn, "SELECT ID, FirstName, LastName, Balance FROM user_accounts WHERE Status='Approved' AND Role='User' ORDER BY FirstName ASC");
+              while ($u = mysqli_fetch_assoc($user_query)) {
+                $accNo = "ACC-" . str_pad($u['ID'], 5, '0', STR_PAD_LEFT);
+                echo "<option value='{$u['ID']}'>{$u['FirstName']} {$u['LastName']} ({$accNo})</option>";
+              }
+              ?>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Amount to Add (₱)</label>
+            <input type="number" name="deposit_amount" class="form-control form-control-lg" placeholder="0.00" min="1" step="0.01" required>
+          </div>
+          <div class="alert alert-info small">
+            <i class="bi bi-info-circle me-2"></i> This will be added directly to the user's current balance.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" name="confirm_deposit" class="btn btn-success">Update Balance</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
         <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content rounded-4 overflow-hidden shadow-lg">
@@ -451,7 +493,8 @@ if (mysqli_num_rows($accounts_result) > 0) {
               </div>
             </div>
           </div>
-        </div><section id="transactions">
+        </div>
+        <section id="transactions">
   <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>

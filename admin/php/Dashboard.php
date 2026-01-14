@@ -222,6 +222,27 @@ if (isset($_POST['create_admin'])) {
         echo "Error: " . mysqli_error($conn);
     }
 }
+
+// =======
+// ACOUNT MANAGEMENT
+// =========
+
+if (isset($_POST['confirm_deposit'])) {
+    $accountId = mysqli_real_escape_string($conn, $_POST['deposit_account_id']);
+    $amount = mysqli_real_escape_string($conn, $_POST['deposit_amount']);
+
+    if ($amount > 0) {
+        // SQL to increment the balance
+        $sql = "UPDATE user_accounts SET Balance = Balance + $amount WHERE ID = '$accountId'" ;
+        
+        if (mysqli_query($conn, $sql)) {
+            echo "<script>alert('Balance updated successfully!'); window.location.href=window.location.href;</script>";
+        } else {
+            echo "<script>alert('Error updating balance: " . mysqli_error($conn) . "');</script>";
+        }
+    }
+}
+
 // ============================================
 // ADMIN SAVINGS BACKEND - Safe Fixed Version
 // Add this AFTER your existing code, don't replace everything
@@ -351,10 +372,10 @@ $manage_trans_query = "
 $manage_trans_result = mysqli_query($conn, $manage_trans_query);
 
 // ======================================================
-// FOR TOTAL BALANCE OF ADMIN
+// Dashboard
 // ======================================================
 // 1. Get Total Balance of all users
-$balance_query = mysqli_query($conn, "SELECT SUM(Balance) AS total_sum FROM user_accounts");
+$balance_query = mysqli_query($conn, "SELECT SUM(Balance) AS total_sum FROM user_accounts Where Status='Approved'");
 $balance_data = mysqli_fetch_assoc($balance_query);
 $totalBalance = $balance_data['total_sum'] ?? 0;
 
