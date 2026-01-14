@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jan 01, 2026 at 09:57 PM
+-- Generation Time: Jan 14, 2026 at 05:09 AM
 -- Server version: 9.1.0
 -- PHP Version: 8.3.14
 
@@ -29,32 +29,52 @@ SET time_zone = "+00:00";
 
 DROP TABLE IF EXISTS `loans`;
 CREATE TABLE IF NOT EXISTS `loans` (
-  `loan_id` int NOT NULL,
-  `customer_name` varchar(100) NOT NULL,
+  `loan_id` int NOT NULL AUTO_INCREMENT,
+  `customer_id` int NOT NULL,
   `loan_type` varchar(100) NOT NULL,
+  `reason` varchar(255) DEFAULT NULL,
   `amount` decimal(12,2) NOT NULL,
   `Status` enum('Pending','Approved','Rejected') DEFAULT 'Pending',
   `application_date` date DEFAULT NULL,
-  PRIMARY KEY (`loan_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`loan_id`),
+  KEY `fk_loans_customer` (`customer_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `loans`
 --
 
-INSERT INTO `loans` (`loan_id`, `customer_name`, `loan_type`, `amount`, `Status`, `application_date`) VALUES
-(3, 'Pedro Reyes', 'Auto Loan', 25000.00, 'Pending', '2025-02-28'),
-(2, 'Maria Santos', 'Housing Loan', 300000.00, 'Pending', '2025-03-05'),
-(1, 'Juan Dela Cruz', 'Personal Loan', 50000.00, 'Pending', '2025-03-12'),
-(4, 'Kene', 'loan', 2000.00, 'Approved', '2026-01-01'),
-(6, 'james', 'loan', 2000.00, 'Approved', '2026-01-01'),
-(7, 'escueta', 'loan', 2000.00, 'Rejected', '2026-01-01'),
-(8, 'rivera', 'loan', 2000.00, 'Pending', '2026-01-01'),
-(9, 'Pogi', 'Personal', 20000.00, 'Pending', '2025-12-17'),
-(10, 'Pogi', 'Personal', 20000.00, 'Rejected', '2025-12-17'),
-(11, 'Panget', 'Business', 21.00, 'Rejected', '2025-12-17'),
-(12, 'dqkjdjqk', 'Auto', 200001.00, 'Approved', '2025-12-17'),
-(13, 'Johan Guigayoma', 'Auto', 500000.00, 'Pending', '2025-12-31');
+INSERT INTO `loans` (`loan_id`, `customer_id`, `loan_type`, `reason`, `amount`, `Status`, `application_date`) VALUES
+(9, 8, 'Personal', NULL, 1000.00, 'Approved', '2026-01-14');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `loan_payments`
+--
+
+DROP TABLE IF EXISTS `loan_payments`;
+CREATE TABLE IF NOT EXISTS `loan_payments` (
+  `payment_id` int NOT NULL AUTO_INCREMENT,
+  `loan_id` int NOT NULL,
+  `due_date` date NOT NULL,
+  `payment_amount` decimal(12,2) DEFAULT '0.00',
+  `status` enum('Pending','Paid') DEFAULT 'Pending',
+  PRIMARY KEY (`payment_id`),
+  KEY `loan_id` (`loan_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `loan_payments`
+--
+
+INSERT INTO `loan_payments` (`payment_id`, `loan_id`, `due_date`, `payment_amount`, `status`) VALUES
+(30, 9, '2026-07-14', 166.65, 'Pending'),
+(29, 9, '2026-06-14', 166.67, 'Pending'),
+(28, 9, '2026-05-14', 166.67, 'Pending'),
+(27, 9, '2026-04-14', 166.67, 'Pending'),
+(26, 9, '2026-03-14', 166.67, 'Pending'),
+(25, 9, '2026-02-14', 166.67, 'Pending');
 
 -- --------------------------------------------------------
 
@@ -81,15 +101,9 @@ CREATE TABLE IF NOT EXISTS `savings_accounts` (
 --
 
 INSERT INTO `savings_accounts` (`savings_id`, `ID`, `status`, `savings_type`, `interest_rate`, `balance`, `last_interest_date`, `created_at`) VALUES
-('SAV-001', 1, 'Active', 'Special', 0.10, 100041.10, '2025-12-31', '2025-12-30 06:00:48'),
-('SAV-002', 2, 'Pending', 'Fixed', 0.08, 5000.00, '2025-12-29', '2025-12-05 02:00:00'),
-('SAV-003', 3, 'Closed', 'Regular', 0.05, 20000.00, '2025-12-28', '2025-12-10 03:00:00'),
-('SAV-004', 4, 'Frozen', 'Regular', 0.05, 15000.00, '2025-12-27', '2025-11-15 04:00:00'),
-('SAV-005', 5, 'Active', 'Special', 0.10, 200054.79, '2025-12-31', '2025-12-30 08:24:53'),
-('SAV-006', 1, 'Active', 'Special', 0.10, 1000273.97, '2025-12-31', '2025-12-30 08:25:14'),
-('SAV-007', 5, 'Pending', 'Fixed', 0.08, 200000.00, NULL, '2025-12-31 01:42:50'),
-('SAV-008', 9, 'Active', 'Fixed', 0.08, 1111.00, NULL, '2026-01-01 21:16:35'),
-('SAV-009', 3, 'Active', 'Special', 0.10, 1000000.00, NULL, '2026-01-01 21:16:49');
+('SAV0008c45', 8, 'Active', 'Regular', 2.50, 500.00, NULL, '2026-01-14 00:25:34'),
+('SAV00081c6', 8, 'Active', 'Fixed', 3.50, 3401.00, NULL, '2026-01-14 00:25:52'),
+('SAV0008bbf', 8, 'Pending', 'Fixed', 3.50, 1000.00, NULL, '2026-01-14 02:53:59');
 
 -- --------------------------------------------------------
 
@@ -107,29 +121,103 @@ CREATE TABLE IF NOT EXISTS `savings_transactions` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`transaction_id`),
   KEY `savings_id` (`savings_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `savings_transactions`
 --
 
 INSERT INTO `savings_transactions` (`transaction_id`, `savings_id`, `transaction_type`, `amount`, `balance_after`, `created_at`) VALUES
-(13, 'SAV-004', 'Interest', 2.05, 15002.05, '2025-12-27 04:00:00'),
-(12, 'SAV-004', 'Withdraw', 10000.00, 15000.00, '2025-12-01 02:00:00'),
-(11, 'SAV-004', 'Deposit', 10000.00, 25000.00, '2025-11-20 01:00:00'),
-(10, 'SAV-003', 'Interest', 2.74, 20002.74, '2025-12-28 06:00:00'),
-(9, 'SAV-003', 'Withdraw', 5000.00, 20000.00, '2025-12-15 02:00:00'),
-(7, 'SAV-002', 'Deposit', 500.00, 7500.00, '2025-12-08 03:00:00'),
-(8, 'SAV-003', 'Deposit', 5000.00, 25000.00, '2025-12-11 01:00:00'),
-(6, 'SAV-002', 'Withdraw', 1000.00, 7000.00, '2025-12-07 02:00:00'),
-(5, 'SAV-002', 'Deposit', 3000.00, 8000.00, '2025-12-06 01:00:00'),
-(4, 'SAV-001', 'Interest', 13.70, 100013.70, '2025-12-30 06:02:00'),
-(3, 'SAV-001', 'Withdraw', 7000.00, 100000.00, '2025-12-10 03:00:00'),
-(2, 'SAV-001', 'Deposit', 2000.00, 107000.00, '2025-12-05 02:00:00'),
-(1, 'SAV-001', 'Deposit', 5000.00, 105000.00, '2025-12-02 01:30:00'),
-(14, 'SAV-001', 'Interest', 27.40, 100041.10, '2025-12-30 16:00:00'),
-(15, 'SAV-005', 'Interest', 54.79, 200054.79, '2025-12-30 16:00:00'),
-(16, 'SAV-006', 'Interest', 273.97, 1000273.97, '2025-12-30 16:00:00');
+(1, 'SAV0008c45', 'Deposit', 1000.00, 1000.00, '2026-01-14 00:25:34'),
+(2, 'SAV00081c6', 'Deposit', 1000.00, 1000.00, '2026-01-14 00:25:52'),
+(3, 'SAV00081c6', 'Deposit', 2000.00, 3000.00, '2026-01-14 00:27:52'),
+(4, 'SAV00085e7', 'Deposit', 1000.00, 1000.00, '2026-01-14 01:40:14'),
+(5, 'SAV0008d17', 'Deposit', 1000.00, 1000.00, '2026-01-14 01:42:02'),
+(6, 'SAV0008641', 'Deposit', 100.00, 100.00, '2026-01-14 01:43:30'),
+(7, 'SAV0008fbc', 'Deposit', 900.00, 900.00, '2026-01-14 01:43:50'),
+(8, 'SAV0008334', 'Deposit', 100.00, 100.00, '2026-01-14 01:48:53'),
+(9, 'SAV0008c45', 'Deposit', 900.00, 1900.00, '2026-01-14 01:51:15'),
+(10, 'SAV0008c45', 'Withdraw', 900.00, 1000.00, '2026-01-14 01:51:22'),
+(11, 'SAV000892c', 'Deposit', 900.00, 900.00, '2026-01-14 01:54:20'),
+(12, 'SAV00087ed', 'Deposit', 49999.00, 49999.00, '2026-01-14 01:56:41'),
+(13, 'SAV0008295', 'Deposit', 500.00, 500.00, '2026-01-14 02:06:27'),
+(14, 'SAV0008867', 'Deposit', 1000.00, 1000.00, '2026-01-14 02:06:43'),
+(15, 'SAV0008004', 'Deposit', 100.00, 100.00, '2026-01-14 02:12:26'),
+(16, 'SAV00081c6', 'Deposit', 401.00, 3401.00, '2026-01-14 02:13:21'),
+(17, 'SAV0008d98', 'Deposit', 1000.00, 1000.00, '2026-01-14 02:28:25'),
+(18, 'SAV00089f8', 'Deposit', 1000.00, 1000.00, '2026-01-14 02:35:23'),
+(19, 'SAV0008231', 'Deposit', 1000.00, 1000.00, '2026-01-14 02:43:15'),
+(20, 'SAV0008bbf', 'Deposit', 1000.00, 1000.00, '2026-01-14 02:53:59'),
+(21, 'SAV0008c45', 'Withdraw', 500.00, 500.00, '2026-01-14 03:17:17');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `transactions`
+--
+
+DROP TABLE IF EXISTS `transactions`;
+CREATE TABLE IF NOT EXISTS `transactions` (
+  `transaction_id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `transaction_type` enum('Cash In','Cash Out','Send Money','Received Money') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `balance_after` decimal(15,2) NOT NULL,
+  `description` varchar(255) NOT NULL,
+  `icon` varchar(50) DEFAULT 'bi-cash',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`transaction_id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=MyISAM AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `transactions`
+--
+
+INSERT INTO `transactions` (`transaction_id`, `user_id`, `transaction_type`, `amount`, `balance_after`, `description`, `icon`, `created_at`) VALUES
+(13, 8, 'Cash Out', 100.00, 8300.00, 'ATM Withdrawal', 'bi-arrow-down-circle', '2026-01-13 05:15:11'),
+(11, 8, 'Cash Out', 500.00, 8500.00, 'ATM Withdrawal', 'bi-arrow-down-circle', '2026-01-13 05:00:27'),
+(12, 8, 'Cash Out', 100.00, 8400.00, 'Cash Out via Counter', 'bi-wallet2', '2026-01-13 05:15:02'),
+(10, 8, 'Cash Out', 1000.00, 9000.00, 'Cash Out via Counter', 'bi-wallet2', '2026-01-13 05:00:07'),
+(14, 8, 'Cash Out', 100.00, 8200.00, 'Cash Out via Sari-Sari Store', 'bi-shop', '2026-01-13 05:15:23'),
+(18, 3, 'Received Money', 100.00, 0.00, 'Received from Keneth James', 'bi-receive', '2026-01-13 05:43:14'),
+(17, 8, 'Send Money', 100.00, 0.00, 'Sent to Juan', 'bi-send', '2026-01-13 05:43:14'),
+(19, 8, 'Send Money', 100.00, 0.00, 'Sent to Juan', 'bi-send', '2026-01-13 05:50:12'),
+(20, 3, 'Received Money', 100.00, 0.00, 'Received from Keneth James', 'bi-receive', '2026-01-13 05:50:12'),
+(21, 8, 'Send Money', 100.00, 0.00, 'Sent to Juan', 'bi-send', '2026-01-13 06:01:47'),
+(22, 3, 'Received Money', 100.00, 0.00, 'Received from Keneth James', 'bi-receive', '2026-01-13 06:01:47'),
+(23, 8, 'Cash Out', 300.00, 7400.00, 'Transfer to Savings (SAV-001)', 'bi-piggy-bank', '2026-01-13 06:43:01'),
+(24, 8, 'Cash Out', 5.00, 7395.00, 'Transfer to Savings (SAV-001)', 'bi-piggy-bank', '2026-01-13 06:43:20'),
+(25, 8, 'Cash In', 400.93, 7795.93, 'Withdrawal from Savings (SAV-001)', 'bi-arrow-down-circle', '2026-01-13 06:44:44'),
+(26, 8, 'Cash Out', 100.00, 7695.93, 'Initial deposit to Savings (SAV0008f11)', 'bi-piggy-bank', '2026-01-13 06:57:37'),
+(27, 8, 'Cash In', 500.00, 8195.93, 'Withdrawal from Savings (SAV-001)', 'bi-arrow-down-circle', '2026-01-13 06:58:49'),
+(28, 8, 'Cash Out', 195.93, 8000.00, 'Transfer to Savings (SAV-001)', 'bi-piggy-bank', '2026-01-13 07:06:55'),
+(29, 8, 'Cash Out', 500.00, 7500.00, 'Transfer to Savings (SAV-001)', 'bi-piggy-bank', '2026-01-13 07:09:13'),
+(30, 8, 'Cash In', 100000.00, 107500.00, 'Withdrawal from Savings (SAV-001)', 'bi-arrow-down-circle', '2026-01-13 07:13:33'),
+(31, 8, 'Cash Out', 10000.00, 97500.00, 'Initial deposit to Savings (SAV0008f06)', 'bi-piggy-bank', '2026-01-13 12:33:46'),
+(32, 8, 'Cash Out', 60000.00, 37500.00, 'Initial deposit to Savings (SAV0008952)', 'bi-piggy-bank', '2026-01-13 12:34:07'),
+(33, 8, 'Cash In', 10000.00, 47500.00, 'Withdrawal from Savings (SAV0008952)', 'bi-arrow-down-circle', '2026-01-13 12:34:54'),
+(34, 8, 'Cash Out', 1000.00, 46500.00, 'Initial deposit to Savings (SAV0008c45)', 'bi-piggy-bank', '2026-01-14 00:25:34'),
+(35, 8, 'Cash Out', 1000.00, 45500.00, 'Initial deposit to Savings (SAV00081c6)', 'bi-piggy-bank', '2026-01-14 00:25:52'),
+(36, 8, 'Cash Out', 2000.00, 43500.00, 'Transfer to Savings (SAV00081c6)', 'bi-piggy-bank', '2026-01-14 00:27:52'),
+(37, 8, 'Cash Out', 1000.00, 41000.00, 'Initial deposit to Savings (SAV00085e7)', 'bi-piggy-bank', '2026-01-14 01:40:14'),
+(38, 8, 'Cash Out', 1000.00, 40000.00, 'Initial deposit to Savings (SAV0008d17)', 'bi-piggy-bank', '2026-01-14 01:42:02'),
+(39, 8, 'Cash Out', 100.00, 39900.00, 'Initial deposit to Savings (SAV0008641)', 'bi-piggy-bank', '2026-01-14 01:43:30'),
+(40, 8, 'Cash Out', 900.00, 39000.00, 'Initial deposit to Savings (SAV0008fbc)', 'bi-piggy-bank', '2026-01-14 01:43:50'),
+(41, 8, 'Cash Out', 100.00, 38900.00, 'Initial deposit to Savings (SAV0008334)', 'bi-piggy-bank', '2026-01-14 01:48:53'),
+(42, 8, 'Cash Out', 900.00, 38000.00, 'Transfer to Savings (SAV0008c45)', 'bi-piggy-bank', '2026-01-14 01:51:15'),
+(43, 8, 'Cash In', 900.00, 38900.00, 'Withdrawal from Savings (SAV0008c45)', 'bi-arrow-down-circle', '2026-01-14 01:51:22'),
+(44, 8, 'Cash Out', 900.00, 38000.00, 'Initial deposit to Savings (SAV000892c)', 'bi-piggy-bank', '2026-01-14 01:54:20'),
+(45, 8, 'Cash Out', 49999.00, 50001.00, 'Initial deposit to Savings (SAV00087ed)', 'bi-piggy-bank', '2026-01-14 01:56:41'),
+(46, 8, 'Cash Out', 500.00, 49501.00, 'Initial deposit to Savings (SAV0008295)', 'bi-piggy-bank', '2026-01-14 02:06:27'),
+(47, 8, 'Cash Out', 1000.00, 48501.00, 'Initial deposit to Savings (SAV0008867)', 'bi-piggy-bank', '2026-01-14 02:06:43'),
+(48, 8, 'Cash Out', 100.00, 48401.00, 'Initial deposit to Savings (SAV0008004)', 'bi-piggy-bank', '2026-01-14 02:12:26'),
+(49, 8, 'Cash Out', 401.00, 48000.00, 'Transfer to Savings (SAV00081c6)', 'bi-piggy-bank', '2026-01-14 02:13:21'),
+(50, 8, 'Cash Out', 1000.00, 47000.00, 'Initial deposit to Savings (SAV0008d98)', 'bi-piggy-bank', '2026-01-14 02:28:25'),
+(51, 8, 'Cash Out', 1000.00, 46000.00, 'Initial deposit to Savings (SAV00089f8)', 'bi-piggy-bank', '2026-01-14 02:35:23'),
+(52, 8, 'Cash Out', 1000.00, 45000.00, 'Initial deposit to Savings (SAV0008231)', 'bi-piggy-bank', '2026-01-14 02:43:15'),
+(53, 8, 'Cash Out', 1000.00, 44000.00, 'Initial deposit to Savings (SAV0008bbf)', 'bi-piggy-bank', '2026-01-14 02:53:59'),
+(54, 8, 'Cash In', 500.00, 44500.00, 'Withdrawal from Savings (SAV0008c45)', 'bi-arrow-down-circle', '2026-01-14 03:17:17');
 
 -- --------------------------------------------------------
 
@@ -162,9 +250,9 @@ CREATE TABLE IF NOT EXISTS `user_accounts` (
 --
 
 INSERT INTO `user_accounts` (`ID`, `FirstName`, `MiddleName`, `LastName`, `Email`, `Phone`, `Address`, `Birthdate`, `Password`, `Img`, `Role`, `Status`, `Balance`) VALUES
-(8, 'Keneth James', 'Esceuta', 'Rivera', 'riverakenethjames@gmail.com', '09940425690', 'Binan Laguna', '2005-11-05', 'ken123', 'profile/img_695487642ea7c.jpg', 'User', 'Pending', 0.00),
+(8, 'Keneth James', 'Esceuta', 'Rivera', 'riverakenethjames@gmail.com', '09940425690', 'Binan Laguna', '2005-11-05', 'ken123', 'profile/img_695487642ea7c.jpg', 'User', 'Approved', 44500.00),
 (2, 'Abdul', 'Pacalundo', 'Disomimba', 'malik@test.com', '0912345678', 'Quezon City, Philippines', '1998-05-12', 'malik12345', 'profile/img_695487642ea7c.jpg', 'User', 'Rejected', 0.00),
-(3, 'Juan', 'Santos', 'Dela Cruz', 'juan.delacruz@test.com', '09171234567', 'Manila, Philippines', '1995-03-18', 'juan12345', 'profile/img_695487642ea7c.jpg', 'User', 'Approved', 0.00),
+(3, 'Juan', 'Santos', 'Dela Cruz', 'juan.delacruz@test.com', '09171234567', 'Manila, Philippines', '1995-03-18', 'juan12345', 'profile/img_695487642ea7c.jpg', 'User', 'Approved', 500.00),
 (4, 'Maria', 'Reyes', 'Gonzales', 'maria.gonzales@test.com', '09281234567', 'Cebu City, Philippines', '1997-11-05', 'maria12345', 'profile/img_695487642ea7c.jpg', 'User', 'Approved', 0.00),
 (5, 'Joshua', 'Lim', 'Tan', 'joshua.tan@test.com', '09061234567', 'Davao City, Philippines', '2000-01-22', 'joshua12345', 'profile/img_695487642ea7c.jpg', 'User', 'Approved', 0.00),
 (6, 'Angela', 'Cruz', 'Navarro', 'angela.navarro@test.com', '09391234567', 'Baguio City, Philippines', '1996-07-30', 'angela12345', 'profile/img_695487642ea7c.jpg', 'User', 'Pending', 0.00),

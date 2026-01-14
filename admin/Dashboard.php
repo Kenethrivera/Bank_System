@@ -3,8 +3,8 @@ session_start();
 
 // Redirect if admin is not logged in
 if (!isset($_SESSION['email'])) {
-    header("Location: ../login.php");
-    exit();
+  header("Location: ../login.php");
+  exit();
 }
 
 // Prevent caching so browser back button doesn't show logged-in content
@@ -543,13 +543,14 @@ header("Expires: 0"); // Proxies
             </div>
           </div>
 
+          <!-- Savings tiles -->
           <div class="row g-4 mt-2">
             <?php if (!empty($savings_result)): ?>
               <?php foreach ($savings_result as $row): ?>
                 <?php
                 $status = $row['status'] ?? 'Pending';
                 $account_type = $row['savings_type'] ?? 'N/A';
-                $customer_id = $row['customer_id'] ?? 0;
+                $customer_id = $row['ID'] ?? 0;
                 $savings_id = $row['savings_id'] ?? '';
                 $interest_rate = floatval($row['interest_rate'] ?? 0);
                 $total_balance = floatval($row['balance'] ?? 0);
@@ -602,7 +603,7 @@ header("Expires: 0"); // Proxies
                         <div class="d-flex align-items-center gap-2">
                           <h3 class="fw-bold mb-0">₱<?= number_format($total_balance, 2) ?></h3>
                           <small class="text-success fw-semibold" style="font-size:0.85rem;">
-                            <i class="bi bi-arrow-up-right"></i> <?= number_format($interest_rate * 100, 2) ?>%
+                            <i class="bi bi-arrow-up-right"></i> <?= number_format($interest_rate, 2) ?>%
                           </small>
                         </div>
                       </div>
@@ -613,7 +614,7 @@ header("Expires: 0"); // Proxies
                         <div>
                           <small class="text-muted">Interest Rate</small><br>
                           <span
-                            class="badge bg-primary-subtle text-primary fw-semibold"><?= number_format($interest_rate * 100, 2) ?>%
+                            class="badge bg-primary-subtle text-primary fw-semibold"><?= number_format($interest_rate, 2) ?>%
                             APY</span>
                         </div>
                         <div class="text-end">
@@ -671,7 +672,6 @@ header("Expires: 0"); // Proxies
           </div> <!-- closing for savings box -->
 
           <!-- DETAILS MODAL -->
-          <!-- DETAILS MODAL (keep only this one) -->
           <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
               <div class="modal-content rounded-4 shadow">
@@ -827,6 +827,23 @@ header("Expires: 0"); // Proxies
             </div>
           </div>
 
+          <?php
+          $users = [];
+          $userQuery = mysqli_query($conn, "
+                        SELECT ID, FirstName, LastName 
+                        FROM user_accounts 
+                        WHERE Status = 'Approved'
+                        ORDER BY FirstName ASC
+                    ");
+
+          if ($userQuery) {
+            while ($row = mysqli_fetch_assoc($userQuery)) {
+              $users[] = $row;
+            }
+          }
+          ?>
+
+
           <!-- MODAL FOR NEW SAVINGS APPLICATION -->
           <div class="modal fade" id="savingsModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -846,11 +863,11 @@ header("Expires: 0"); // Proxies
 
                     <div class="mb-3">
                       <label class="form-label">Customer:</label>
-                      <select name="customer_id" class="form-select" required>
+                      <select name="ID" id="customerSelect" class="form-select" required>
                         <option value="">--Select Customer--</option>
                         <?php foreach ($users as $user): ?>
-                          <option value="<?= $user['customer_id'] ?>">
-                            <?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?>
+                          <option value="<?= $user['ID'] ?>">
+                            <?= htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']) ?>
                           </option>
                         <?php endforeach; ?>
                       </select>
@@ -871,23 +888,34 @@ header("Expires: 0"); // Proxies
                         step="0.01" min="0">
                     </div>
 
-
+                    <div class="mb-1">
+                      <small class="text-muted fw-semibold">
+                        Available Balance:
+                        <span id="availableBalance">₱0.00</span>
+                      </small>
+                    </div>
                     <div class="mb-3">
                       <label class="form-label">Initial Deposit:</label>
-                      <input type="number" name="initial_deposit" class="form-control" min="0" step="0.01" required>
+                      <input type="number" id="initialDeposit" name="initial_deposit" class="form-control" min="0"
+                        step="0.01" required>
+                        <small id="depositError" class="text-danger small mt-1"></small>
                     </div>
+
                   </div>
 
                   <!-- footer -->
                   <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" name="add_savings" class="btn btn-primary">Create Account</button>
+                    <button type="submit" id="createSavingsBtn" name="add_savings" class="btn btn-primary">
+                      Create Account
+                    </button>
                   </div>
 
                 </form>
               </div>
             </div>
           </div>
+          
         </section>
 
         <!-- LOAN SECTION -->
@@ -914,17 +942,17 @@ header("Expires: 0"); // Proxies
               <div class="card-body">
                 <div class="input-group">
                   <span class="input-group-text">
-                    <span class="material-symbols-outlined">
-                      search
-                    </span>
+                    <span class="material-symbols-outlined">search</span>
                   </span>
-                  <input type="text" name="search" class="form-control"
-                    placeholder="Search by customer name or loan type..."
+
+                  <input type="text" name="search" class="form-control" placeholder="Search by customer name..."
                     value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+
                   <button class="btn btn-primary" type="submit">Search</button>
                 </div>
               </div>
             </form>
+
 
 
             <!-- Loans Table -->
@@ -947,6 +975,12 @@ header("Expires: 0"); // Proxies
                       if (mysqli_num_rows($loans_result) > 0) {
                         while ($row = mysqli_fetch_assoc($loans_result)) {
 
+                          $first = $row['FirstName'] ?? '';
+                          $middle = $row['MiddleName'] ?? '';
+                          $last = $row['LastName'] ?? '';
+
+                          $fullName = trim("$first $middle $last") ?: 'Unknown Customer';
+
                           $formattedAmount = "₱" . number_format($row['amount'], 2);
 
                           // for styling the STATUS column
@@ -959,8 +993,9 @@ header("Expires: 0"); // Proxies
                             $statusClass = 'status-pill status-rejected';
                           }
 
+
                           echo "<tr> 
-                                  <td> {$row['customer_name']} </td>
+                                  <td>" . htmlspecialchars($fullName) . "</td>
                                   <td> {$row['loan_type']} </td>
                                   <td> <strong>{$formattedAmount}</strong> </td>
                                   <td><span class='$statusClass'>{$row['Status']}</span></td>
@@ -1056,8 +1091,18 @@ header("Expires: 0"); // Proxies
                   <div class="modal-body">
                     <input type="hidden" name="loan_id">
                     <div class="mb-3">
-                      <label class="form-label">Customer Name: </label>
-                      <input type="text" name="customer_name" class="form-control" required>
+                      <label class="form-label">Customer</label>
+                      <select name="customer_id" class="form-select" required>
+                        <option value="">-- Select Customer --</option>
+                        <?php
+                        $users = mysqli_query($conn, "SELECT ID, FirstName, LastName FROM user_accounts WHERE Status='Approved'");
+                        while ($u = mysqli_fetch_assoc($users)) {
+                          echo "<option value='{$u['ID']}'>
+                {$u['FirstName']} {$u['LastName']}
+              </option>";
+                        }
+                        ?>
+                      </select>
                     </div>
                     <div class="mb-3">
                       <label class="form-label">Loan Type:</label>
