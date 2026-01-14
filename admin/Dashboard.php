@@ -82,6 +82,12 @@ header("Expires: 0"); // Proxies
             </a>
           </li>
           <li class="nav-item">
+  <a href="#admin-management" class="nav-link">
+    <span class="material-symbols-outlined">admin_panel_settings</span>
+    <span class="link-text">Admins</span>
+  </a>
+</li>
+          <li class="nav-item">
             <a href="#" id="adminLogoutLink" class="nav-link">
               <span class="material-symbols-outlined">logout</span>
               <span class="link-text">Logout</span>
@@ -1227,7 +1233,128 @@ if (mysqli_num_rows($accounts_result) > 0) {
             </div>
           </div>
         </section>
+        
+<section id="admin-management">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-0">Admin Management</h2>
+        <small class="text-muted">Manage system administrators and staff access</small>
+      </div>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAdminModal">
+        <i class="bi bi-person-plus-fill me-2"></i>Create New Admin
+      </button>
+    </div>
 
+    <div class="card p-3">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Admin Name</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $admins = mysqli_query($conn, "SELECT * FROM user_accounts WHERE Role = 'Admin' ORDER BY ID DESC");
+            while ($adm = mysqli_fetch_assoc($admins)):
+              $admFull = $adm['FirstName'] . " " . $adm['LastName'];
+            ?>
+              <tr>
+                <td>
+                  <div class="fw-bold"><?= htmlspecialchars($admFull) ?></div>
+                  <small class="text-muted">ID: ADM-<?= str_pad($adm['ID'], 4, '0', STR_PAD_LEFT) ?></small>
+                </td>
+                <td><?= htmlspecialchars($adm['Email']) ?></td>
+                <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                <td class="text-center">
+                  <button class="btn btn-sm btn-outline-info view-profile-btn" 
+                          data-bs-toggle="modal" data-bs-target="#profileModal"
+                          data-id="<?= $adm['ID'] ?>" data-name="<?= htmlspecialchars($admFull) ?>"
+                          data-email="<?= htmlspecialchars($adm['Email']) ?>" data-phone="<?= htmlspecialchars($adm['Phone']) ?>"
+                          data-dob="<?= htmlspecialchars($adm['Birthdate']) ?>" data-address="<?= htmlspecialchars($adm['Address']) ?>"
+                          data-status="<?= htmlspecialchars($adm['Status']) ?>" data-img="<?= htmlspecialchars($adm['Img']) ?>">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="modal fade" id="createAdminModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content rounded-4 shadow-lg">
+      <form method="POST" enctype="multipart/form-data">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">New Administrator Account</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          
+          <div class="text-center mb-4">
+            <div id="adminPreviewWrapper">
+              <div class="upload-box mx-auto" onclick="document.getElementById('adminProfilePicture').click()" 
+                   style="width:100px; height:100px; border:2px dashed #ccc; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                <i class="bi bi-camera fs-3 text-muted"></i>
+              </div>
+            </div>
+            <input type="file" name="adm_img" id="adminProfilePicture" class="d-none" accept="image/*">
+            <small class="text-muted">Admin Profile Photo</small>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">First Name</label>
+              <input type="text" name="adm_fname" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Middle Name</label>
+              <input type="text" name="adm_mname" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Last Name</label>
+              <input type="text" name="adm_lname" class="form-control" required>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Email Address</label>
+              <input type="email" name="adm_email" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Phone Number</label>
+              <input type="tel" name="adm_phone" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Birthdate</label>
+              <input type="date" name="adm_dob" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Address</label>
+              <input type="text" name="adm_address" class="form-control" required>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-bold">Password</label>
+              <input type="password" name="adm_password" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" name="create_admin" class="btn btn-primary px-4">Create Admin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
         <!-- LOGOUT -->
         <!-- Logout Modal -->
         <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">

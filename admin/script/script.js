@@ -434,6 +434,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+document.addEventListener('DOMContentLoaded', () => {
+    const adminPicInput = document.getElementById('adminProfilePicture');
+    if (adminPicInput) {
+        adminPicInput.onchange = function (evt) {
+            const [file] = this.files;
+            if (file) {
+                const wrapper = document.getElementById('adminPreviewWrapper');
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    // Replace the camera icon with the actual image preview
+                    wrapper.innerHTML = `
+                        <img src="${e.target.result}" 
+                             class="rounded-circle border border-4 border-white shadow mx-auto d-block" 
+                             style="width:100px; height:100px; object-fit: cover; cursor: pointer"
+                             onclick="document.getElementById('adminProfilePicture').click()">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
+});
 // ADMIN LOGOUT
 adminLogoutLink.addEventListener('click', function(e) {
     e.preventDefault(); // prevent default anchor behavior

@@ -177,7 +177,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_loan'])) {
     header("Location: " . $_SERVER['PHP_SELF'] . '#loan');
     exit();
 }
+// ADMIN CREATE
+/* ---- CREATE NEW ADMIN ---- */
+if (isset($_POST['create_admin'])) {
+    // ASSIGN FORM DATA TO VARIABLES FIRST
+    $fname   = mysqli_real_escape_string($conn, $_POST['adm_fname']);
+    $mname   = mysqli_real_escape_string($conn, $_POST['adm_mname'] ?? '');
+    $lname   = mysqli_real_escape_string($conn, $_POST['adm_lname']);
+    $email   = mysqli_real_escape_string($conn, $_POST['adm_email']);
+    $phone   = mysqli_real_escape_string($conn, $_POST['adm_phone']);
+    $dob     = mysqli_real_escape_string($conn, $_POST['adm_dob']);
+    $address = mysqli_real_escape_string($conn, $_POST['adm_address']);
+    $pass    = $_POST['adm_password']; 
 
+    // 1. Handle Image Upload Logic
+    $imgName = "profile/default.jpg"; 
+    
+    if (isset($_FILES['adm_img']) && $_FILES['adm_img']['error'] === 0) {
+        $targetDir = "../profile/"; 
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = "admin_" . time() . "_" . basename($_FILES["adm_img"]["name"]);
+        $targetFilePath = $targetDir . $fileName;
+        $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
+
+        $allowTypes = array('jpg', 'png', 'jpeg', 'gif');
+        if (in_array(strtolower($fileType), $allowTypes)) {
+            if (move_uploaded_file($_FILES["adm_img"]["tmp_name"], $targetFilePath)) {
+                $imgName = "profile/" . $fileName; 
+            }
+        }
+    }
+
+    // 2. Insert into Database
+    $sql = "INSERT INTO user_accounts (FirstName, MiddleName, LastName, Email, Phone, Birthdate, Address, Password, Img, Role, Status, Balance) 
+            VALUES ('$fname', '$mname', '$lname', '$email', '$phone', '$dob', '$address', '$pass', '$imgName', 'Admin', 'Approved', 0.00)";
+
+    if (mysqli_query($conn, $sql)) {
+        header("Location: " . $_SERVER['PHP_SELF'] . "#admin-management");
+        exit();
+    } else {
+        echo "Error: " . mysqli_error($conn);
+    }
+}
 // ============================================
 // ADMIN SAVINGS BACKEND - Safe Fixed Version
 // Add this AFTER your existing code, don't replace everything
