@@ -1,4 +1,18 @@
 <?php
+
+$cashoutSuccessMessage = '';
+$cashoutErrorMessage = '';
+
+if (isset($_SESSION['cashout_success'])) {
+    $cashoutSuccessMessage = $_SESSION['cashout_success'];
+    unset($_SESSION['cashout_success']);
+}
+
+if (isset($_SESSION['cashout_error'])) {
+    $cashoutErrorMessage = $_SESSION['cashout_error'];
+    unset($_SESSION['cashout_error']);
+}
+
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
@@ -10,6 +24,7 @@ $userId = $_SESSION['user_id'];  // pass this to back_end.php
 include 'php/back_end.php';
 require_once 'php/users_loans_backend.php';
 ?>
+
 
 <!doctype html>
 
@@ -23,11 +38,9 @@ require_once 'php/users_loans_backend.php';
 
 <body>
 
-    <!-- 
-// ==========================================
-// HEADER NAVIGATION BAR
-// ========================================== 
--->
+    
+ <!-- HEADER NAVIGATION BAR -->
+
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2" href="#">
@@ -45,12 +58,6 @@ require_once 'php/users_loans_backend.php';
                     <i class="bi bi-cash-stack me-1"></i> Loan
                 </a>
             </div>
-
-            <!-- 
-// ==========================================
-// FAQ & USER DROPDOWN MENU
-// ========================================== 
--->
 
             <div class="d-flex align-items-center">
                 <i class="bi bi-question-circle me-3 fs-5 text-secondary cursor-pointer" data-bs-toggle="modal"
@@ -96,12 +103,7 @@ require_once 'php/users_loans_backend.php';
         </div>
     </nav>
 
-    <!-- 
-// ==========================================
-// MAIN DASHBOARD CONTENT
-// ========================================== 
--->
-
+<!-- Main dashboard content -->
     <div class="container py-5">
 
         <div id="home" class="dashboard-section active">
@@ -122,12 +124,7 @@ require_once 'php/users_loans_backend.php';
                 </div>
             </div>
 
-            <!-- 
-// ==========================================
-// TRANSACTION ACTION BUTTONS
-// ========================================== 
--->
-
+<!-- Transactions buttons -->
             <div class="row g-4 mb-5">
 
                 <!-- CASH IN  -->
@@ -251,7 +248,6 @@ require_once 'php/users_loans_backend.php';
                 </div>
 
                 <!-- CASH IN MACHINE MODAL -->
-                <!-- CASH IN MACHINE MODAL -->
                 <div class="modal fade" id="cashMachineModal" tabindex="-1">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content">
@@ -325,7 +321,6 @@ require_once 'php/users_loans_backend.php';
                     </div>
                 </div>
 
-
                 <!-- REUSABLE CASH IN INSTRUCTIONS MODAL -->
                 <div class="modal fade" id="cashInInstructionsModal" tabindex="-1">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -348,87 +343,185 @@ require_once 'php/users_loans_backend.php';
                     </div>
                 </div>
 
-
-
-                <!-- CASH OUT -->
                 <div class="col-md-4">
-                    <div class="btn-action btn-red-light" data-bs-toggle="modal" data-bs-target="#cashOutModal">
-                        <i class="bi bi-arrow-up fs-2 mb-2"></i>
-                        <span>Cash Out</span>
+    <div class="btn-action btn-red-light" data-bs-toggle="modal" data-bs-target="#cashOutModal">
+        <i class="bi bi-arrow-up fs-2 mb-2"></i>
+        <span>Cash Out</span>
+    </div>
+</div>
+
+        <!-- CASH OUT MODAL -->
+        <div class="modal fade" id="cashOutModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">Cash Out</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                </div>
 
-                <!-- CASH OUT MODAL -->
-                <div class="modal fade" id="cashOutModal" tabindex="-1">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-
-                            <div class="modal-header bg-danger text-white">
-                                <h5 class="modal-title">Cash Out</h5>
-                                <button type="button" class="btn-close btn-close-white"
-                                    data-bs-dismiss="modal"></button>
+                    <div class="modal-body">
+                        <p class="fw-bold mb-3">Select Cash Out Method:</p>
+                        <div class="d-flex gap-2 mb-3">
+                            <div class="card text-center cursor-pointer flex-fill p-3 shadow-sm hover-shadow cashout-method-card" 
+                                data-method="Over the Counter" data-description="Cash Out via Counter" data-icon="bi-wallet2">
+                                <i class="bi bi-building fs-2 text-success mb-2"></i>
+                                <div>Over the Counter</div>
                             </div>
 
-                            <div class="modal-body">
-                                <p class="fw-bold mb-3">Select Cash Out Method:</p>
-                                <div class="d-flex gap-2 mb-3">
-
-                                    <div class="card text-center cursor-pointer flex-fill p-3 shadow-sm hover-shadow"
-                                        onclick="selectCashOutMethod('Over the Counter', 'Cash Out via Counter', 'bi-wallet2')">
-                                        <i class="bi bi-building fs-2 text-success mb-2"></i>
-                                        <div>Over the Counter</div>
-                                    </div>
-
-                                    <div class="card text-center cursor-pointer flex-fill p-3 shadow-sm hover-shadow"
-                                        onclick="selectCashOutMethod('Cash Machine', 'ATM Withdrawal', 'bi-arrow-down-circle')">
-                                        <i class="bi bi-bank fs-2 text-primary mb-2"></i>
-                                        <div>Cash Machine</div>
-                                    </div>
-
-                                    <div class="card text-center cursor-pointer flex-fill p-3 shadow-sm hover-shadow"
-                                        onclick="selectCashOutMethod('Sari-Sari Store', 'Cash Out via Sari-Sari Store', 'bi-shop')">
-                                        <i class="bi bi-shop fs-2 text-warning mb-2"></i>
-                                        <div>Sari-Sari Store</div>
-                                    </div>
-
-                                </div>
-
-                                <form method="POST" action="php/process_cashout.php">
-                                    <input type="hidden" name="method" id="cashOutMethod" required>
-                                    <input type="hidden" name="description" id="cashOutDescription" required>
-                                    <input type="hidden" name="icon" id="cashOutIcon" required>
-
-                                    <div class="mb-2 text-muted">
-                                        Available Balance: <span id="availableBalance">$
-                                            <?php echo number_format($totalBalance, 2); ?>
-                                        </span>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="cashOutAmount" class="form-label">Enter amount:</label>
-                                        <input type="number" min="1" step="0.01" class="form-control" id="cashOutAmount"
-                                            name="amount" required>
-                                        <div class="text-danger mt-1" id="cashOutWarning" style="display:none;"></div>
-                                    </div>
-
-
-                                    <div class="text-center">
-                                        <button type="submit" class="btn btn-danger w-100">Confirm Cash Out</button>
-                                    </div>
-                                </form>
-
-                                <script>
-                                    const availableBalance = <?php echo $totalBalance; ?>;
-                                </script>
-
+                            <div class="card text-center cursor-pointer flex-fill p-3 shadow-sm hover-shadow cashout-method-card" 
+                                data-method="Cash Machine" data-description="ATM Withdrawal" data-icon="bi-arrow-down-circle">
+                                <i class="bi bi-bank fs-2 text-primary mb-2"></i>
+                                <div>Cash Machine</div>
                             </div>
 
+                            <div class="card text-center cursor-pointer flex-fill p-3 shadow-sm hover-shadow cashout-method-card" 
+                                data-method="Sari-Sari Store" data-description="Cash Out via Sari-Sari Store" data-icon="bi-shop">
+                                <i class="bi bi-shop fs-2 text-warning mb-2"></i>
+                                <div>Sari-Sari Store</div>
+                            </div>
                         </div>
+
+                        <form id="cashOutForm" method="POST" action="php/process_cashout.php">
+                            <input type="hidden" name="method" id="cashOutMethod" required>
+                            <input type="hidden" name="description" id="cashOutDescription" required>
+                            <input type="hidden" name="icon" id="cashOutIcon" required>
+
+                            <!-- Selected Method Display -->
+                            <div id="selectedMethodDisplay" class="alert alert-info mb-3" style="display:none;">
+                                <strong>Selected Method:</strong> <span id="displayMethod"></span>
+                            </div>
+
+                            <!-- Over the Counter Options -->
+                            <div id="counterOptions" class="mb-3" style="display:none;">
+                                <label for="counterLocation" class="form-label fw-bold">Select Location:</label>
+                                <select class="form-select" id="counterLocation" name="location">
+                                    <option value="">-- Choose Location --</option>
+                                    <option value="7-Eleven">7-Eleven</option>
+                                    <option value="Uncle John">Uncle John</option>
+                                    <option value="Alfamart">Alfamart</option>
+                                    <option value="Shell Select">Shell Select</option>
+                                </select>
+                            </div>
+
+                            <!-- Cash Machine Options -->
+                            <div id="machineOptions" class="mb-3" style="display:none;">
+                                <label for="machineType" class="form-label fw-bold">Select Machine:</label>
+                                <select class="form-select" id="machineType" name="machine">
+                                    <option value="">-- Choose Machine --</option>
+                                    <option value="ETAP">ETAP</option>
+                                    <option value="Pay & Go">Pay & Go</option>
+                                    <option value="Touch and Pay">Touch and Pay</option>
+                                </select>
+                            </div>
+
+                            <!-- Sari-Sari Store Options -->
+                            <div id="storeOptions" class="mb-3" style="display:none;">
+                                <label for="storeCellphone" class="form-label fw-bold">Store Cellphone Number:</label>
+                                <input type="text" class="form-control" id="storeCellphone" name="store_cellphone" 
+                                    placeholder="09XXXXXXXXX" pattern="09[0-9]{9}" maxlength="11">
+                                <small class="text-muted">Format: 09XXXXXXXXX (11 digits)</small>
+                                <div id="cellphoneWarning" class="text-danger mt-1" style="display:none;"></div>
+                            </div>
+
+                            <div class="mb-2 text-muted">
+                                Available Balance: <span id="availableBalance">₱<?php echo number_format($totalBalance, 2); ?></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="cashOutAmount" class="form-label fw-bold">Enter amount:</label>
+                                <input type="number" min="1" step="0.01" class="form-control" id="cashOutAmount" name="amount" required>
+                                <div class="text-danger mt-1" id="cashOutWarning" style="display:none;"></div>
+                            </div>
+
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-danger w-100" id="confirmCashOutBtn">Confirm Cash Out</button>
+                            </div>
+                        </form>
+
+                        <script>
+                            const availableBalance = <?php echo $totalBalance; ?>;
+                        </script>
                     </div>
                 </div>
+            </div>
+        </div>
 
+        <!-- Warning Modal -->
+        <div class="modal fade" id="cashOutWarningModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Warning</h5>
+                        <p class="mb-0" id="cashOutWarningMessage"></p>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center">
+                        <button type="button" class="btn btn-warning px-4" data-bs-dismiss="modal">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <div class="col-md-4">
+        <!-- Error Modal -->
+        <div class="modal fade" id="cashOutErrorModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Error</h5>
+                        <p class="mb-0" id="cashOutErrorMessage"></p>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center">
+                        <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cash Out Success Modal -->
+<div class="modal fade" id="cashOutSuccessModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Cash Out Successful!</h5>
+                <p class="mb-0"><?php echo htmlspecialchars($cashoutSuccessMessage); ?>
+                        </p>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center">
+                        <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cash Out Error Modal -->
+        <div class="modal fade" id="cashOutErrorModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-body text-center p-4">
+                        <div class="mb-3">
+                            <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Cash Out Failed</h5>
+                        <p class="mb-0">
+                            <?php echo htmlspecialchars($cashoutErrorMessage); ?>
+                        </p>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center">
+                        <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+                        <div class="col-md-4">
                     <div class="btn-action btn-purple-light" data-bs-toggle="modal" data-bs-target="#sendMoneyModal">
                         <i class="bi bi-send fs-2 mb-2"></i>
                         <span>Send Money</span>
@@ -501,26 +594,16 @@ require_once 'php/users_loans_backend.php';
                         </div>
                     </div>
                 </div>
-
-
                 <script>
                     const balanceDisplay = parseFloat(<?php echo $totalBalance; ?>);
                 </script>
             </div>
 
-
-            <!-- 
-// ==========================================
-// TRANSACTION HISTORY
-// ========================================== 
--->
-
+            <!-- Transaction History -->
             <h5 class="fw-bold mb-3">Recent Transactions</h5>
 
             <div class="account-item p-0 overflow-hidden">
                 <?php foreach ($transactions as $t):
-
-                    // Determine color, icon, and sign
                     if ($t['transaction_type'] === 'Cash In') {
                         $colorClass = 'text-success';
                         $iconClass = 'icon-green';
@@ -537,10 +620,10 @@ require_once 'php/users_loans_backend.php';
                         $sign = '-';
                         $icon = 'bi-send';
                     } elseif ($t['transaction_type'] === 'Received Money') {
-                        $colorClass = 'text-success'; // green for received
+                        $colorClass = 'text-success'; 
                         $iconClass = 'icon-green';
                         $sign = '+';
-                        $icon = 'bi-currency-exchange'; // choose an icon that exists in Bootstrap Icons
+                        $icon = 'bi-currency-exchange';
                     } else {
                         $colorClass = '';
                         $iconClass = '';
@@ -570,13 +653,6 @@ require_once 'php/users_loans_backend.php';
         </div>
 
         <!-- SAVINGS SECTIONNN -->
-        <!-- 
-// ==========================================
-// SAVINGS SECTION - Complete Frontend
-// Place this in your user_dashboard.php where the savings section is
-// ========================================== 
--->
-
         <?php
         // Display success/error messages
         if (isset($_SESSION['success_message'])) {
@@ -748,7 +824,7 @@ require_once 'php/users_loans_backend.php';
             <?php endif; ?>
         </div>
 
-        <!-- CREATE SAVINGS ACCOUNT MODAL -->
+        <!-- SAVINGS ACCOUNT MODAL -->
 <div class="modal fade" id="createSavingsModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -933,11 +1009,7 @@ require_once 'php/users_loans_backend.php';
             </div>
         </div>
 
-        <!--  
-// ==========================================
-// LOAN SECTION DASHBOARD
-// ========================================== 
--->
+<!-- Loan section dashboard -->
 <div id="loan" class="dashboard-section">
     <h4 class="fw-bold mb-1">My Loans</h4>
     <p class="text-muted mb-4">Manage your active loans and payments</p>
@@ -981,12 +1053,8 @@ require_once 'php/users_loans_backend.php';
         </div>
     </div>
 
-    <!-- 
-    // ==========================================
-    // ACTIVE LOANS LIST AND REQUEST LOAN BUTTON
-    // ========================================== 
-    -->
 
+<!-- Request loans and other functions -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="fw-bold m-0">Active Loans</h5>
         <button class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3" data-bs-toggle="modal"
@@ -1226,6 +1294,89 @@ require_once 'php/users_loans_backend.php';
         </div>
     </div>
 </div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="paymentSuccessModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Payment Successful!</h5>
+                <p class="mb-0" id="successMessage"></p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-success px-4" onclick="location.reload()">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal fade" id="paymentErrorModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Payment Failed</h5>
+                <p class="mb-0" id="errorMessage"></p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="paymentConfirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="bi bi-question-circle-fill text-warning" style="font-size: 4rem;"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Confirm Payment</h5>
+                <p class="mb-0" id="confirmMessage"></p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center gap-2">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-success px-4" id="confirmPaymentAction">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Info/Warning Modal -->
+<div class="modal fade" id="infoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="bi bi-info-circle-fill text-info" style="font-size: 4rem;"></i>
+                </div>
+                <h5 class="fw-bold mb-2" id="infoModalTitle">Notice</h5>
+                <p class="mb-0" id="infoMessage"></p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal" id="infoModalCloseBtn">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
     <!-- 
 // ==========================================
 // ACCOUNT VIEW BUTTON COMMAND
@@ -1383,10 +1534,24 @@ require_once 'php/users_loans_backend.php';
             </div>
         </div>
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        <?php if ($cashoutSuccessMessage): ?>
+                    const successModal = new bootstrap.Modal(document.getElementById('cashOutSuccessModal'));
+                    successModal.show();
+                <?php endif; ?>
+
+                <?php if ($cashoutErrorMessage): ?>
+                    const errorModal = new bootstrap.Modal(document.getElementById('cashOutErrorModal'));
+                    errorModal.show();
+                <?php endif; ?>
+            });
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script/script.js"></script>
     <script src="script/loan_payment.js"></script>
+
 </body>
 
 </html>

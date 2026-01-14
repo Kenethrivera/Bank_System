@@ -1,6 +1,48 @@
 // ==========================================
-// LOAN PAYMENT SYSTEM - COMPLETE WITH DATE LOGIC
+// LOAN PAYMENT SYSTEM - WITH MODAL NOTIFICATIONS
 // ==========================================
+
+// Helper functions for modals
+function showSuccessModal(message) {
+    document.getElementById('successMessage').textContent = message;
+    const modal = new bootstrap.Modal(document.getElementById('paymentSuccessModal'));
+    modal.show();
+}
+
+function showErrorModal(message) {
+    document.getElementById('errorMessage').textContent = message;
+    const modal = new bootstrap.Modal(document.getElementById('paymentErrorModal'));
+    modal.show();
+}
+
+function showInfoModal(title, message, onClose = null) {
+    document.getElementById('infoModalTitle').textContent = title;
+    document.getElementById('infoMessage').textContent = message;
+    const modal = new bootstrap.Modal(document.getElementById('infoModal'));
+
+    if (onClose) {
+        const closeBtn = document.getElementById('infoModalCloseBtn');
+        closeBtn.onclick = function () {
+            onClose();
+            modal.hide();
+        };
+    }
+
+    modal.show();
+}
+
+function showConfirmModal(message, onConfirm) {
+    document.getElementById('confirmMessage').textContent = message;
+    const modal = new bootstrap.Modal(document.getElementById('paymentConfirmModal'));
+
+    const confirmBtn = document.getElementById('confirmPaymentAction');
+    confirmBtn.onclick = function () {
+        modal.hide();
+        onConfirm();
+    };
+
+    modal.show();
+}
 
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function () {
@@ -38,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (contentEl) contentEl.classList.remove('d-none');
 
                     if (!data.success) {
-                        alert('Error: ' + (data.error || 'Unknown error'));
+                        showErrorModal(data.error || 'Unknown error');
                         return;
                     }
 
@@ -80,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .catch(err => {
                     console.error('Error loading loan details:', err);
                     if (loadingEl) loadingEl.classList.add('d-none');
-                    alert('Failed to load loan details.\n\nError: ' + err.message);
+                    showErrorModal('Failed to load loan details.\n\nError: ' + err.message);
                 });
         });
     });
@@ -144,15 +186,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     if (!data.success) {
                         if (data.all_paid) {
-                            alert('This loan has been fully paid!');
-                            const modalEl = document.getElementById('payLoanModal');
-                            if (modalEl) {
-                                const modal = bootstrap.Modal.getInstance(modalEl);
-                                if (modal) modal.hide();
-                            }
+                            showInfoModal('Loan Paid', 'This loan has been fully paid!', function () {
+                                const modalEl = document.getElementById('payLoanModal');
+                                if (modalEl) {
+                                    const modal = bootstrap.Modal.getInstance(modalEl);
+                                    if (modal) modal.hide();
+                                }
+                            });
                             return;
                         }
-                        alert('Error: ' + (data.error || 'Unknown error'));
+                        showErrorModal(data.error || 'Unknown error');
                         return;
                     }
 
@@ -246,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .catch(err => {
                     console.error('Error loading payment data:', err);
-                    alert('Failed to load payment information.\n\nError: ' + err.message);
+                    showErrorModal('Failed to load payment information.\n\nError: ' + err.message);
                 });
         });
     });
@@ -322,26 +365,27 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log('Payment details:', { loanId, paymentId, type, amount });
 
             if (!loanId) {
-                alert('Invalid loan data. Please try again.');
+                showErrorModal('Invalid loan data. Please try again.');
                 return;
             }
 
             if (!type) {
-                alert('Please select a payment type.');
+                showErrorModal('Please select a payment type.');
                 return;
             }
 
             if (!paymentId && type !== 'full') {
-                alert('Invalid payment data. Please try again.');
+                showErrorModal('Invalid payment data. Please try again.');
                 return;
             }
 
             if (!amount || parseFloat(amount) <= 0) {
-                alert('Invalid payment amount.');
+                showErrorModal('Invalid payment amount.');
                 return;
             }
 
-            if (confirm(`Are you sure you want to pay ₱${amount}?`)) {
+            // Show confirmation modal
+            showConfirmModal(`Are you sure you want to pay ₱${amount}?`, function () {
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = 'Processing...';
 
@@ -370,21 +414,20 @@ document.addEventListener('DOMContentLoaded', function () {
                         console.log('Payment response:', data);
 
                         if (data.success) {
-                            alert('✅ Payment successful!\n\nAmount paid: ₱' + data.amount_paid);
-                            location.reload();
+                            showSuccessModal('Amount paid: ₱' + data.amount_paid);
                         } else {
-                            alert('❌ Payment failed:\n\n' + (data.error || 'Unknown error'));
+                            showErrorModal(data.error || 'Unknown error');
                             confirmBtn.disabled = false;
                             confirmBtn.textContent = 'Confirm Payment';
                         }
                     })
                     .catch(err => {
                         console.error('Payment error:', err);
-                        alert('❌ Payment failed. Please try again.\n\nError: ' + err.message);
+                        showErrorModal('Payment failed. Please try again.\n\nError: ' + err.message);
                         confirmBtn.disabled = false;
                         confirmBtn.textContent = 'Confirm Payment';
                     });
-            }
+            });
         });
     } else {
         console.error('Confirm payment button not found!');
