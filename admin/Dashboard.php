@@ -172,7 +172,7 @@ header("Expires: 0"); // Proxies
         <h5 class="fw-semibold"><?php echo $totalSavings; ?></h5>
       </div>
       <div class="col">
-        <small class="text-muted">User Accounts</small>
+        <small class="text-muted">Admin Accounts</small>
         <h5 class="fw-semibold"><?php echo $totalChecking; ?></h5>
       </div>
     </div>
@@ -445,57 +445,77 @@ if (mysqli_num_rows($accounts_result) > 0) {
               </div>
             </div>
           </div>
-        </div>
-        <section id="transactions">
-          <div class="container-fluid">
+        </div><section id="transactions">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-0">Transaction Management</h2>
+        <small class="text-muted">View and manage all transactions</small>
+      </div>
+    </div>
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
-              <div>
-                <h2 class="fw-bold mb-0">Transaction Management</h2>
-                <small class="text-muted">View and manage all transactions</small>
-              </div>
-            </div>
-            <div class="card p-3 mb-4">
-              <div class="input-group">
-                <span class="input-group-text bg-white">
-                  <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" class="form-control" placeholder="Search by account number or type.">
-              </div>
-            </div>
+    <div class="card p-3 mb-4">
+      <div class="input-group">
+        <span class="input-group-text bg-white">
+          <i class="bi bi-search text-muted"></i>
+        </span>
+        <input type="text" id="transactionSearchInput" class="form-control" placeholder="Search by account number, type, or reference...">
+      </div>
+    </div>
 
-            <div class="card p-3">
-              <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>Account</th>
-                      <th>Type</th>
-                      <th>Amount</th>
-                      <th>Recipient</th>
-                      <th>Description</th>
-                      <th>Reference</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>2025-12-16</td>
-                      <td>ACC-10001</td>
-                      <td><span class="badge bg-success">Deposit</span></td>
-                      <td class="text-success">+$1,500</td>
-                      <td>ACC-10006</td>
-                      <td>Salary deposit</td>
-                      <td>1321639216</td>
-                    </tr>
-
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
-        </section>
+    <div class="card p-3">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle" id="transactionTable">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Account</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Description</th>
+              <th>Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (mysqli_num_rows($manage_trans_result) > 0): ?>
+              <?php while ($row = mysqli_fetch_assoc($manage_trans_result)): 
+                // Logic for visual styling
+                $type = $row['transaction_type'];
+                $isPositive = in_array($type, ['Cash In', 'Receive Money', 'Deposit']);
+                
+                $badgeClass = $isPositive ? 'bg-success' : 'bg-danger';
+                if ($type == 'Send Money' || $type == 'Transfer') $badgeClass = 'bg-primary';
+                
+                $textClass = $isPositive ? 'text-success' : 'text-danger';
+                $prefix = $isPositive ? '+' : '-';
+                
+                $formattedAcc = "ACC-" . str_pad($row['user_id'], 5, '0', STR_PAD_LEFT);
+              ?>
+                <tr>
+                  <td class="small"><?php echo date('Y-m-d H:i', strtotime($row['created_at'])); ?></td>
+                  <td>
+                    <div class="fw-bold"><?php echo $formattedAcc; ?></div>
+                    <small class="text-muted"><?php echo htmlspecialchars($row['FirstName'] . ' ' . $row['LastName']); ?></small>
+                  </td>
+                  <td><span class="badge <?php echo $badgeClass; ?>"><?php echo $type; ?></span></td>
+                  <td class="<?php echo $textClass; ?> fw-bold">
+                    <?php echo $prefix . '₱' . number_format($row['amount'], 2); ?>
+                  </td>
+                  <td class="text-muted small"><?php echo htmlspecialchars($row['description']); ?></td>
+                  <td><code class="text-dark">TRX-<?php echo $row['transaction_id']; ?><?php echo strtotime($row['created_at']); ?></code></td>
+                </tr>
+              <?php endwhile; ?>
+            <?php else: ?>
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">No transactions found in database.</td>
+              </tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
 
         <!--SAVINGS SECTION  -->
         <section id="savings" class="flex-grow-2 p-2">

@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // DASHBOARD DATA
 /* Count customers */
-$total_customers_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts");
+$total_customers_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts Where Role='User'");
 $row = mysqli_fetch_assoc($total_customers_result);
 $totalCustomers = $row['total'];
 
@@ -297,6 +297,15 @@ if (isset($_POST['update_status']) && $_POST['update_status'] === 'Approved') {
     header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
     exit();
 }
+// FETCH TRANSACTION SECTION
+
+$manage_trans_query = "
+    SELECT t.*, u.FirstName, u.LastName 
+    FROM transactions t
+    LEFT JOIN user_accounts u ON t.user_id = u.ID
+    ORDER BY t.created_at DESC";
+$manage_trans_result = mysqli_query($conn, $manage_trans_query);
+
 // ======================================================
 // FOR TOTAL BALANCE OF ADMIN
 // ======================================================
@@ -310,7 +319,7 @@ $savings_count_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM saving
 $totalSavings = mysqli_fetch_assoc($savings_count_query)['total'];
 
 // 3. Count Regular User Accounts (Checking)
-$checking_count_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts WHERE Role = 'User'");
+$checking_count_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts WHERE Role = 'Admin'");
 $totalChecking = mysqli_fetch_assoc($checking_count_query)['total'];
 
 // 4. Calculate Progress Bar (Ratio of Savings to Total Accounts)

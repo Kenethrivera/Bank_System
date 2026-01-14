@@ -419,7 +419,21 @@ if (deleteReasonModal) {
         idInput.value = accountId;
     });
 }
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('transactionSearchInput');
+    const table = document.getElementById('transactionTable');
+    if(!searchInput || !table) return;
 
+    searchInput.addEventListener('keyup', function() {
+        const filter = this.value.toUpperCase();
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) {
+            const text = rows[i].textContent.toUpperCase();
+            rows[i].style.display = text.indexOf(filter) > -1 ? '' : 'none';
+        }
+    });
+});
 // ADMIN LOGOUT
 adminLogoutLink.addEventListener('click', function(e) {
     e.preventDefault(); // prevent default anchor behavior
