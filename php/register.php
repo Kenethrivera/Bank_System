@@ -28,8 +28,11 @@ if (isset($_POST['submit'])) {
     $today = new DateTime();
     $birthdateObj = new DateTime($birthdate);
     $age = $today->diff($birthdateObj)->y;
+
     if ($age < 18) {
         $errorMessage = "You must be at least 18 years old to register.";
+    } elseif ($age > 110) {
+        $errorMessage = "Please enter a valid birthdate (Age limit: 110).";
     }
 
     $destination = "";
