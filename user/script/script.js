@@ -177,7 +177,7 @@ cashOutForm.addEventListener('submit', (e) => {
     }
 });
 
-// sendMoney.js
+// sendMoney 
 const sendForm = document.getElementById('sendMoneyForm');
 const sendAmountInput = document.getElementById('sendAmount');
 const recipientInput = document.getElementById('recipientNumber');
@@ -238,7 +238,7 @@ function openDepositModal(savingsId, savingsType, currentBalance) {
     document.getElementById('depositAccountId').textContent = savingsId;
     document.getElementById('depositAmount').value = '';
     document.getElementById('depositWarning').style.display = 'none';
-    
+
     const modal = new bootstrap.Modal(document.getElementById('depositModal'));
     modal.show();
 }
@@ -250,19 +250,19 @@ function openWithdrawModal(savingsId, savingsType, currentBalance, maxWithdraw, 
     document.getElementById('withdrawSavingsId').value = savingsId;
     document.getElementById('withdrawAccountName').textContent = savingsType;
     document.getElementById('withdrawAccountId').textContent = savingsId;
-    document.getElementById('withdrawAvailable').textContent = '₱' + currentBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('withdrawAvailable').textContent = '₱' + currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     document.getElementById('withdrawMaxAmount').value = maxWithdraw;
     document.getElementById('withdrawSavingsType').value = savingsType;
     document.getElementById('withdrawAmount').value = '';
     document.getElementById('withdrawAmount').max = maxWithdraw;
     document.getElementById('withdrawWarning').style.display = 'none';
-    
+
     // Show restriction info for Special accounts
     const restrictionInfo = document.getElementById('withdrawRestrictionInfo');
     const restrictionText = document.getElementById('withdrawRestrictionText');
-    
+
     if (savingsType === 'Special') {
-        restrictionText.textContent = 'Special accounts must maintain a minimum balance of ₱50,000. Maximum withdrawal: ₱' + maxWithdraw.toLocaleString('en-US', {minimumFractionDigits: 2});
+        restrictionText.textContent = 'Special accounts must maintain a minimum balance of ₱50,000. Maximum withdrawal: ₱' + maxWithdraw.toLocaleString('en-US', { minimumFractionDigits: 2 });
         restrictionInfo.style.display = 'block';
     } else if (savingsType === 'Fixed') {
         restrictionText.textContent = 'Fixed accounts have a 3-month lock-in period from creation date.';
@@ -270,7 +270,7 @@ function openWithdrawModal(savingsId, savingsType, currentBalance, maxWithdraw, 
     } else {
         restrictionInfo.style.display = 'none';
     }
-    
+
     const modal = new bootstrap.Modal(document.getElementById('withdrawModal'));
     modal.show();
 }
@@ -449,9 +449,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 /**
- * View transaction history for a savings account
- * Enhanced with better error handling and debugging
- */
+ * View transaction history for a savings account */
 function viewTransactions(savingsId) {
     console.log('Opening transaction history for:', savingsId);
 
@@ -587,9 +585,7 @@ function viewTransactions(savingsId) {
         });
 }
 
-/**
- * Format date for display
- */
+/** Format date for display*/
 function formatDate(dateString) {
     try {
         const date = new Date(dateString);
@@ -641,5 +637,291 @@ document.addEventListener('DOMContentLoaded', function () {
                 bsAlert.close();
             }, 5000);
         }
+    });
+});
+
+
+
+// view loan details modal
+document.querySelectorAll('.view-loan-btn').forEach(button => {
+    button.addEventListener('click', function () {
+        const loanId = this.dataset.loanId;
+
+        document.getElementById('loanDetailsLoading').classList.remove('d-none');
+        document.getElementById('loanDetailsContent').classList.add('d-none');
+
+        fetch('php/get_loan_details.php?loan_id=' + loanId)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loanDetailsLoading').classList.add('d-none');
+                document.getElementById('loanDetailsContent').classList.remove('d-none');
+
+                // Loan Info
+                document.getElementById('ld-loan-id').textContent = data.loan.loan_id;
+                document.getElementById('ld-loan-type').textContent = data.loan.loan_type;
+                document.getElementById('ld-status').textContent = data.loan.Status;
+                document.getElementById('ld-date').textContent = data.loan.application_date;
+                document.getElementById('ld-reason').textContent = data.loan.reason;
+                document.getElementById('ld-total').textContent = '₱' + data.loan.total_amount;
+                document.getElementById('ld-paid').textContent = '₱' + data.loan.paid;
+                document.getElementById('ld-balance').textContent = '₱' + data.loan.balance;
+
+                // Payment Breakdown
+                const tbody = document.getElementById('paymentBreakdownTable');
+                tbody.innerHTML = '';
+
+                data.payments.forEach((p, index) => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${p.due_date}</td>
+                            <td>₱${p.payment_amount}</td>
+                            <td class="fw-bold ${p.status === 'Paid' ? 'text-success' : 'text-warning'}">
+                                ${p.status}
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const methodCards = document.querySelectorAll('.cashout-method-card');
+    const selectedMethodDisplay = document.getElementById('selectedMethodDisplay');
+    const displayMethod = document.getElementById('displayMethod');
+    const counterOptions = document.getElementById('counterOptions');
+    const machineOptions = document.getElementById('machineOptions');
+    const storeOptions = document.getElementById('storeOptions');
+    const cashOutForm = document.getElementById('cashOutForm');
+    const cashOutAmount = document.getElementById('cashOutAmount');
+    const cashOutWarning = document.getElementById('cashOutWarning');
+    const confirmCashOutBtn = document.getElementById('confirmCashOutBtn');
+
+    let selectedMethod = '';
+
+    // Handle method selection
+    methodCards.forEach(card => {
+        card.addEventListener('click', function () {
+            // Remove selected class from all cards
+            methodCards.forEach(c => c.classList.remove('selected'));
+
+            // Add selected class to clicked card
+            this.classList.add('selected');
+
+            // Get method data
+            const method = this.dataset.method;
+            const description = this.dataset.description;
+            const icon = this.dataset.icon;
+
+            // Set hidden inputs
+            document.getElementById('cashOutMethod').value = method;
+            document.getElementById('cashOutDescription').value = description;
+            document.getElementById('cashOutIcon').value = icon;
+
+            // Show selected method
+            selectedMethodDisplay.style.display = 'block';
+            displayMethod.textContent = method;
+
+            // Hide all option divs
+            counterOptions.style.display = 'none';
+            machineOptions.style.display = 'none';
+            storeOptions.style.display = 'none';
+
+            // Clear previous selections and warnings
+            document.getElementById('counterLocation').value = '';
+            document.getElementById('machineType').value = '';
+            document.getElementById('storeCellphone').value = '';
+            document.getElementById('cellphoneWarning').style.display = 'none';
+            document.getElementById('cellphoneWarning').textContent = '';
+
+            // Show relevant options
+            if (method === 'Over the Counter') {
+                counterOptions.style.display = 'block';
+            } else if (method === 'Cash Machine') {
+                machineOptions.style.display = 'block';
+            } else if (method === 'Sari-Sari Store') {
+                storeOptions.style.display = 'block';
+            }
+
+            selectedMethod = method;
+        });
+    });
+
+    // Validate amount on input
+    cashOutAmount.addEventListener('input', function () {
+        const amount = parseFloat(this.value);
+        if (isNaN(amount) || amount <= 0) {
+            cashOutWarning.style.display = 'block';
+            cashOutWarning.textContent = 'Amount must be greater than 0';
+            confirmCashOutBtn.disabled = true;
+        } else if (amount > availableBalance) {
+            cashOutWarning.style.display = 'block';
+            cashOutWarning.textContent = 'Insufficient balance!';
+            confirmCashOutBtn.disabled = true;
+        } else {
+            cashOutWarning.style.display = 'none';
+            confirmCashOutBtn.disabled = false;
+        }
+    });
+
+    // Validate cellphone for Sari-Sari Store
+    const storeCellphone = document.getElementById('storeCellphone');
+    if (storeCellphone) {
+        storeCellphone.addEventListener('input', function () {
+            // Clear warning on input
+            const warningDiv = document.getElementById('cellphoneWarning');
+            warningDiv.style.display = 'none';
+            warningDiv.textContent = '';
+            confirmCashOutBtn.disabled = false;
+        });
+
+        storeCellphone.addEventListener('blur', async function () {
+            const cellphone = this.value.trim();
+            const warningDiv = document.getElementById('cellphoneWarning');
+
+            // Clear previous warnings
+            warningDiv.style.display = 'none';
+            warningDiv.textContent = '';
+
+            if (!cellphone) {
+                return;
+            }
+
+            // Basic format validation
+            if (cellphone.length !== 11 || !cellphone.startsWith('09')) {
+                warningDiv.style.display = 'block';
+                warningDiv.textContent = 'Invalid format. Use: 09XXXXXXXXX';
+                confirmCashOutBtn.disabled = true;
+                return;
+            }
+
+            // Show validating message
+            warningDiv.style.display = 'block';
+            warningDiv.className = 'text-info mt-1';
+            warningDiv.textContent = 'Validating cellphone number...';
+
+            // Validate cellphone via AJAX
+            try {
+                const response = await fetch('php/validate_cellphone.php?cellphone=' + encodeURIComponent(cellphone));
+                const data = await response.json();
+
+                if (!data.success) {
+                    warningDiv.className = 'text-danger mt-1';
+                    warningDiv.style.display = 'block';
+                    warningDiv.textContent = data.message || 'Invalid cellphone number';
+                    confirmCashOutBtn.disabled = true;
+                } else {
+                    warningDiv.className = 'text-success mt-1';
+                    warningDiv.style.display = 'block';
+                    warningDiv.textContent = '✓ ' + data.message;
+                    confirmCashOutBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Validation error:', error);
+                warningDiv.className = 'text-danger mt-1';
+                warningDiv.style.display = 'block';
+                warningDiv.textContent = 'Error validating cellphone number';
+                confirmCashOutBtn.disabled = true;
+            }
+        });
+    }
+
+    // Form submission validation
+    cashOutForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        // Check if method is selected
+        if (!selectedMethod) {
+            showModal('cashOutWarningModal', 'Please select a cash out method first!');
+            return;
+        }
+
+        // Check amount
+        const amount = parseFloat(cashOutAmount.value);
+        if (!amount || amount <= 0) {
+            showModal('cashOutWarningModal', 'Please enter a valid amount!');
+            return;
+        }
+
+        if (amount > availableBalance) {
+            showModal('cashOutWarningModal', 'Insufficient balance! Available: ₱' + availableBalance.toFixed(2));
+            return;
+        }
+
+        // Validate specific options
+        if (selectedMethod === 'Over the Counter') {
+            const location = document.getElementById('counterLocation').value;
+            if (!location) {
+                showModal('cashOutWarningModal', 'Please select a counter location!');
+                return;
+            }
+        } else if (selectedMethod === 'Cash Machine') {
+            const machine = document.getElementById('machineType').value;
+            if (!machine) {
+                showModal('cashOutWarningModal', 'Please select a machine type!');
+                return;
+            }
+        } else if (selectedMethod === 'Sari-Sari Store') {
+            const cellphone = storeCellphone.value.trim();
+            if (!cellphone) {
+                showModal('cashOutWarningModal', 'Please enter store cellphone number!');
+                return;
+            }
+            if (cellphone.length !== 11 || !cellphone.startsWith('09')) {
+                showModal('cashOutWarningModal', 'Invalid cellphone format! Use: 09XXXXXXXXX');
+                return;
+            }
+
+            const warningDiv = document.getElementById('cellphoneWarning');
+            // Check if there's an error (not a success message)
+            if (warningDiv.style.display !== 'none' && warningDiv.className.includes('text-danger')) {
+                showModal('cashOutWarningModal', warningDiv.textContent);
+                return;
+            }
+
+            // Re-validate cellphone before submitting
+            try {
+                const response = await fetch('php/validate_cellphone.php?cellphone=' + encodeURIComponent(cellphone));
+                const data = await response.json();
+
+                if (!data.success) {
+                    showModal('cashOutWarningModal', data.message || 'Invalid cellphone number');
+                    return;
+                }
+            } catch (error) {
+                showModal('cashOutErrorModal', 'Error validating cellphone number');
+                return;
+            }
+        }
+
+        // If all validations pass, submit the form
+        this.submit();
+    });
+
+    function showModal(modalId, message) {
+        const messageElement = modalId === 'cashOutWarningModal'
+            ? document.getElementById('cashOutWarningMessage')
+            : document.getElementById('cashOutErrorMessage');
+
+        messageElement.textContent = message;
+        const modal = new bootstrap.Modal(document.getElementById(modalId));
+        modal.show();
+    }
+
+    // Reset form when modal is closed
+    const cashOutModal = document.getElementById('cashOutModal');
+    cashOutModal.addEventListener('hidden.bs.modal', function () {
+        methodCards.forEach(c => c.classList.remove('selected'));
+        selectedMethodDisplay.style.display = 'none';
+        counterOptions.style.display = 'none';
+        machineOptions.style.display = 'none';
+        storeOptions.style.display = 'none';
+        cashOutForm.reset();
+        cashOutWarning.style.display = 'none';
+        document.getElementById('cellphoneWarning').style.display = 'none';
+        document.getElementById('cellphoneWarning').textContent = '';
+        selectedMethod = '';
+        confirmCashOutBtn.disabled = false;
     });
 });

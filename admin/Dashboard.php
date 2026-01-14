@@ -1019,7 +1019,7 @@ if (mysqli_num_rows($accounts_result) > 0) {
                       <label class="form-label">Initial Deposit:</label>
                       <input type="number" id="initialDeposit" name="initial_deposit" class="form-control" min="0"
                         step="0.01" required>
-                        <small id="depositError" class="text-danger small mt-1"></small>
+                      <small id="depositError" class="text-danger small mt-1"></small>
                     </div>
 
                   </div>
@@ -1036,7 +1036,7 @@ if (mysqli_num_rows($accounts_result) > 0) {
               </div>
             </div>
           </div>
-          
+
         </section>
 
         <!-- LOAN SECTION -->
@@ -1074,8 +1074,6 @@ if (mysqli_num_rows($accounts_result) > 0) {
               </div>
             </form>
 
-
-
             <!-- Loans Table -->
             <div class="card">
               <div class="card-body p-0">
@@ -1088,6 +1086,7 @@ if (mysqli_num_rows($accounts_result) > 0) {
                         <th>Amount</th>
                         <th>Status</th>
                         <th class="d-none d-lg-table-cell">Application Date</th>
+                        <th>Reason</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -1104,8 +1103,8 @@ if (mysqli_num_rows($accounts_result) > 0) {
 
                           $formattedAmount = "₱" . number_format($row['amount'], 2);
 
-                          // for styling the STATUS column
-                          $statusStyle = '';
+                          // Styling for STATUS column
+                          $statusClass = '';
                           if ($row['Status'] === 'Approved') {
                             $statusClass = 'status-pill status-approved';
                           } elseif ($row['Status'] === 'Pending') {
@@ -1114,62 +1113,72 @@ if (mysqli_num_rows($accounts_result) > 0) {
                             $statusClass = 'status-pill status-rejected';
                           }
 
+                          // Display reason or default text
+                          $reason = !empty($row['reason']) ? htmlspecialchars($row['reason']) : '-';
 
                           echo "<tr> 
-                                  <td>" . htmlspecialchars($fullName) . "</td>
-                                  <td> {$row['loan_type']} </td>
-                                  <td> <strong>{$formattedAmount}</strong> </td>
-                                  <td><span class='$statusClass'>{$row['Status']}</span></td>
-                                  <td> {$row['application_date']} </td>
-                                  <td>";
+                <td>" . htmlspecialchars($fullName) . "</td>
+                <td class='d-none d-sm-table-cell'>" . htmlspecialchars($row['loan_type']) . "</td>
+                <td><strong>{$formattedAmount}</strong></td>
+                <td><span class='{$statusClass}'>{$row['Status']}</span></td>
+                <td class='d-none d-lg-table-cell'>" . htmlspecialchars($row['application_date']) . "</td>
+                <td>{$reason}</td>
+                <td>
+                  <div class='btn-group' role='group'>";
 
+                          // View Details Button (Always visible)
+                          echo "<button 
+                      type='button'
+                      class='btn btn-sm btn-info view-loan-btn'
+                      data-loan-id='{$row['loan_id']}'
+                      data-bs-toggle='modal'
+                      data-bs-target='#loanDetailsModal'
+                      title='View Details'>
+                      <i class='bi bi-eye'></i> View
+                    </button>";
+
+                          // Accept/Reject buttons (Only for Pending loans)
                           if ($row['Status'] === 'Pending') {
-                            echo "<form method='Post' style='display:inline;'>
-                                    <input type='hidden' name='loan_id' value='{$row['loan_id']}'>
-                                    <button 
-                                      type='button' 
-                                      name='action' 
-                                      value='Approved'
-                                      class='btn-action btn-accept'
-                                      data-bs-toggle='modal'
-                                      data-bs-target='#confirmModal'
-                                      data-action='Approved'
-                                      data-loanid='{$row['loan_id']}'
-                                    >Accept
-                                    </button>
-                                  </form>
-                                  <form method='post' style='display:inline;'>
-                                    <input type='hidden' name='loan_id' value='{$row['loan_id']}'>
-                                    <button 
-                                      type='button' 
-                                      name='action' 
-                                      value='Rejected' 
-                                      class='btn-action btn-reject'
-                                      data-bs-toggle='modal'
-                                      data-bs-target='#confirmModal'
-                                      data-action='Rejected'
-                                      data-loanid='{$row['loan_id']}'
-                                    >Reject
-                                    </button>
-                                  </form>";
-                          } else {
-                            echo "-";
+                            echo "<button 
+                        type='button' 
+                        name='action' 
+                        value='Approved'
+                        class='btn btn-sm btn-success'
+                        data-bs-toggle='modal'
+                        data-bs-target='#confirmModal'
+                        data-action='Approved'
+                        data-loanid='{$row['loan_id']}'
+                        title='Accept'>
+                        <i class='bi bi-check-circle'></i>
+                      </button>
+                      <button 
+                        type='button' 
+                        name='action' 
+                        value='Rejected' 
+                        class='btn btn-sm btn-danger'
+                        data-bs-toggle='modal'
+                        data-bs-target='#confirmModal'
+                        data-action='Rejected'
+                        data-loanid='{$row['loan_id']}'
+                        title='Reject'>
+                        <i class='bi bi-x-circle'></i>
+                      </button>";
                           }
 
-                          echo "</td> </tr>";
-
+                          echo "  </div>
+                </td>
+              </tr>";
                         }
                       } else {
-                        echo "<tr><td colspan='4'>No Loans Found</td></tr>";
+                        echo "<tr><td colspan='7' class='text-center text-muted py-4'>No Loans Found</td></tr>";
                       }
-
                       ?>
                     </tbody>
                   </table>
                 </div>
               </div>
-              <!-- closing of loans table -->
             </div>
+            <!-- closing of loans table -->
           </div>
           <!-- modal for reject and accept -->
           <div class="modal fade" id="confirmModal" tabindex="-1">
@@ -1239,6 +1248,10 @@ if (mysqli_num_rows($accounts_result) > 0) {
                       <label class="form-label">Amount:</label>
                       <input type="number" name="amount" class="form-control" min="1" step="0.01" required>
                     </div>
+                    <div class="mb-3">
+                      <label class="form-label">Reason:</label>
+                      <input type="text" name="reason" class="form-control" required>
+                    </div>
                   </div>
                   <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -1249,6 +1262,81 @@ if (mysqli_num_rows($accounts_result) > 0) {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- LOAN DETAILS MODAL -->
+          <div class="modal fade" id="loanDetailsModal" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title fw-bold">Loan Details</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                  <!-- Loading -->
+                  <div id="loanDetailsLoading" class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                  </div>
+
+                  <!-- Content -->
+                  <div id="loanDetailsContent" class="d-none">
+                    <!-- Loan Info -->
+                    <h6 class="fw-bold mb-2">Loan Information</h6>
+                    <table class="table table-sm">
+                      <tr>
+                        <th>Loan ID</th>
+                        <td id="ld-loan-id"></td>
+                      </tr>
+                      <tr>
+                        <th>Loan Type</th>
+                        <td id="ld-loan-type"></td>
+                      </tr>
+                      <tr>
+                        <th>Status</th>
+                        <td id="ld-status"></td>
+                      </tr>
+                      <tr>
+                        <th>Application Date</th>
+                        <td id="ld-date"></td>
+                      </tr>
+                      <tr>
+                        <th>Reason</th>
+                        <td id="ld-reason"></td>
+                      </tr>
+                      <tr>
+                        <th>Total Amount</th>
+                        <td id="ld-total"></td>
+                      </tr>
+                      <tr>
+                        <th>Total Paid</th>
+                        <td id="ld-paid"></td>
+                      </tr>
+                      <tr>
+                        <th>Remaining Balance</th>
+                        <td id="ld-balance"></td>
+                      </tr>
+                    </table>
+
+                    <hr>
+
+                    <!-- Payment Breakdown -->
+                    <h6 class="fw-bold mb-2">Payment Breakdown</h6>
+                    <table class="table table-bordered">
+                      <thead class="table-light">
+                        <tr>
+                          <th>#</th>
+                          <th>Due Date</th>
+                          <th>Amount</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody id="paymentBreakdownTable"></tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1564,7 +1652,6 @@ if (mysqli_num_rows($accounts_result) > 0) {
   </div>
 </div>
 </body>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="script/script.js"></script>
+
 
 </html>

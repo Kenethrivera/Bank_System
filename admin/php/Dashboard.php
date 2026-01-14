@@ -18,75 +18,149 @@ $empId = "EMP-" . str_pad($admin_row['ID'], 3, '0', STR_PAD_LEFT);
    HANDLE LOAN APPROVE / REJECT
 ========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-
     /* ---- LOAN ACTION ---- */
     if (!empty($_POST['loan_id']) && !empty($_POST['action'])) {
 
         $loan_id = intval($_POST['loan_id']);
         $action = $_POST['action'];
         $newStatus = ($action === 'Approved') ? 'Approved' : 'Rejected';
+        $reason = $_POST['reason'] ?? null;
 
-        // Update loan status
-        $stmt = mysqli_prepare($conn, "UPDATE loans SET Status=? WHERE loan_id=?");
-        mysqli_stmt_bind_param($stmt, 'si', $newStatus, $loan_id);
+        // Get loan details BEFORE updating
+        $loanQuery = "SELECT customer_id, amount, loan_type, application_date FROM loans WHERE loan_id = ?";
+        $stmt = mysqli_prepare($conn, $loanQuery);
+        mysqli_stmt_bind_param($stmt, 'i', $loan_id);
         mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $loanData = mysqli_fetch_assoc($result);
         mysqli_stmt_close($stmt);
 
-        // Generate payment schedule if approved
-        if ($newStatus === 'Approved') {
+        if (!$loanData) {
+            $_SESSION['error'] = "Loan not found.";
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        }
 
-            // 1. Get loan info
-            $loanRes = mysqli_query($conn, "SELECT loan_type, amount, application_date FROM loans WHERE loan_id = $loan_id");
-            $loanData = mysqli_fetch_assoc($loanRes);
+        $customer_id = $loanData['customer_id'];
+        $loan_amount = floatval($loanData['amount']);
+        $loan_type = $loanData['loan_type'];
+        $start_date = $loanData['application_date'];
 
-            $loan_type = $loanData['loan_type'];
-            $amount = $loanData['amount'];
-            $start_date = $loanData['application_date'];
+        // Start transaction
+        mysqli_begin_transaction($conn);
 
-            // 2. Determine number of months per loan type
-            switch ($loan_type) {
-                case 'Personal':
-                    $months = 6;
-                    break;
-                case 'Home':
-                    $months = 10;
-                    break;
-                case 'Auto Loan':
-                    $months = 12; // 1 year
-                    break;
-                case 'Business':
-                    $months = 24; // 2 years
-                    break;
-                default:
-                    $months = 12;
-            }
-
-            // 3. Calculate monthly payment with rounding fix
-            $monthly_payment = round($amount / $months, 2);
-
-            for ($i = 1; $i <= $months; $i++) {
-                $due_date = date('Y-m-d', strtotime("+$i month", strtotime($start_date)));
-
-                // Adjust last payment to match total loan amount exactly
-                if ($i === $months) {
-                    $total_assigned = $monthly_payment * ($months - 1);
-                    $monthly_payment = round($amount - $total_assigned, 2);
-                }
-
+        try {
+            // Update loan status + reason
+            if (!empty($reason)) {
                 $stmt = mysqli_prepare(
                     $conn,
-                    "INSERT INTO loan_payments (loan_id, due_date, payment_amount, status) VALUES (?, ?, ?, 'Pending')"
+                    "UPDATE loans SET Status = ?, reason = ? WHERE loan_id = ?"
                 );
-                mysqli_stmt_bind_param($stmt, 'isd', $loan_id, $due_date, $monthly_payment);
+                mysqli_stmt_bind_param($stmt, 'ssi', $newStatus, $reason, $loan_id);
+            } else {
+                $stmt = mysqli_prepare(
+                    $conn,
+                    "UPDATE loans SET Status = ? WHERE loan_id = ?"
+                );
+                mysqli_stmt_bind_param($stmt, 'si', $newStatus, $loan_id);
+            }
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+
+            // If approved, add loan amount to user's balance and generate payment schedule
+            if ($newStatus === 'Approved') {
+                
+                // 1. Get current user balance
+                $balanceQuery = "SELECT Balance FROM user_accounts WHERE ID = ?";
+                $stmt = mysqli_prepare($conn, $balanceQuery);
+                mysqli_stmt_bind_param($stmt, 'i', $customer_id);
+                mysqli_stmt_execute($stmt);
+                $result = mysqli_stmt_get_result($stmt);
+                $userRow = mysqli_fetch_assoc($result);
+                mysqli_stmt_close($stmt);
+
+                if (!$userRow) {
+                    throw new Exception("User account not found.");
+                }
+
+                $current_balance = floatval($userRow['Balance']);
+                $new_balance = $current_balance + $loan_amount;
+
+                // 2. Update user balance
+                $updateBalanceQuery = "UPDATE user_accounts SET Balance = ? WHERE ID = ?";
+                $stmt = mysqli_prepare($conn, $updateBalanceQuery);
+                mysqli_stmt_bind_param($stmt, 'di', $new_balance, $customer_id);
                 mysqli_stmt_execute($stmt);
                 mysqli_stmt_close($stmt);
+
+                // 3. Insert transaction record
+                $transQuery = "INSERT INTO transactions (user_id, transaction_type, amount, balance_after, description, icon) 
+                               VALUES (?, 'Cash In', ?, ?, ?, 'bi-cash-coin')";
+                $stmt = mysqli_prepare($conn, $transQuery);
+                $description = "Loan Approved - " . $loan_type;
+                mysqli_stmt_bind_param($stmt, 'idds', $customer_id, $loan_amount, $new_balance, $description);
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_close($stmt);
+
+                // 4. Determine number of months per loan type
+                switch ($loan_type) {
+                    case 'Personal':
+                        $months = 6;
+                        break;
+                    case 'Home':
+                        $months = 10;
+                        break;
+                    case 'Auto Loan':
+                        $months = 12; // 1 year
+                        break;
+                    case 'Business':
+                        $months = 24; // 2 years
+                        break;
+                    default:
+                        $months = 12;
+                }
+
+                // 5. Calculate monthly payment with rounding fix
+                $monthly_payment = round($loan_amount / $months, 2);
+
+                // 6. Generate payment schedule
+                for ($i = 1; $i <= $months; $i++) {
+                    $due_date = date('Y-m-d', strtotime("+$i month", strtotime($start_date)));
+
+                    // Adjust last payment to match total loan amount exactly
+                    if ($i === $months) {
+                        $total_assigned = $monthly_payment * ($months - 1);
+                        $monthly_payment = round($loan_amount - $total_assigned, 2);
+                    }
+
+                    $stmt = mysqli_prepare(
+                        $conn,
+                        "INSERT INTO loan_payments (loan_id, due_date, payment_amount, status) 
+                         VALUES (?, ?, ?, 'Pending')"
+                    );
+                    mysqli_stmt_bind_param($stmt, 'isd', $loan_id, $due_date, $monthly_payment);
+                    mysqli_stmt_execute($stmt);
+                    mysqli_stmt_close($stmt);
+                }
+
+                $_SESSION['success'] = "Loan approved successfully! ₱" . number_format($loan_amount, 2) . " has been added to the customer's balance.";
+            } else {
+                $_SESSION['success'] = "Loan rejected successfully.";
             }
+
+            // Commit transaction
+            mysqli_commit($conn);
+
+        } catch (Exception $e) {
+            // Rollback on error
+            mysqli_rollback($conn);
+            $_SESSION['error'] = "Error processing loan: " . $e->getMessage();
         }
 
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     }
+
 
 
     /* ---- ACCOUNT APPROVE / REJECT ---- */
@@ -141,6 +215,7 @@ $loans_result = mysqli_query(
         l.loan_type,
         l.amount,
         l.Status,
+        l.reason,
         l.application_date,
         u.FirstName,
         u.MiddleName,
@@ -154,8 +229,6 @@ if (!$loans_result) {
     die("Loans Query Error: " . mysqli_error($conn));
 }
 
-
-
 // adding new loans
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_loan'])) {
 
@@ -164,21 +237,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_loan'])) {
     $amount = floatval($_POST['amount']);
     $status = 'Pending';
     $application_date = date('Y-m-d');
+    $reason = $_POST['reason'];
 
     $stmt = mysqli_prepare(
         $conn,
-        "INSERT INTO loans (customer_id, loan_type, amount, Status, application_date)
-         VALUES (?, ?, ?, ?, ?)"
+        "INSERT INTO loans (customer_id, loan_type, amount, Status, application_date, reason)
+         VALUES (?, ?, ?, ?, ?, ?)"
     );
 
     mysqli_stmt_bind_param(
         $stmt,
-        "isdss",
+        "isdsss",
         $customer_id,
         $loan_type,
         $amount,
         $status,
-        $application_date
+        $application_date,
+        $reason
     );
 
     mysqli_stmt_execute($stmt);
@@ -293,14 +368,14 @@ if ($result) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_savings'])) {
     $savings_id = mysqli_real_escape_string($conn, $_POST['savings_id']);
     $savings_type = mysqli_real_escape_string($conn, $_POST['savings_type']);
-    
+
     // Set interest rate based on savings type
     $interest_rates = [
         'Regular' => 2.5,
         'Fixed' => 3.5,
         'Special' => 5.0
     ];
-    
+
     $interest_rate = isset($interest_rates[$savings_type]) ? $interest_rates[$savings_type] : 2.5;
 
     $stmt = mysqli_prepare($conn, "UPDATE savings_accounts SET savings_type=?, interest_rate=? WHERE savings_id=?");
@@ -635,6 +710,7 @@ $loanSql = "
         l.loan_type,
         l.amount,
         l.Status,
+        l.reason,
         l.application_date,
         u.FirstName,
         u.MiddleName,
@@ -647,7 +723,6 @@ $loanSql = "
 ";
 
 $loans_result = executeQuery($conn, $loanSql, $loanSearchData);
-
 // --- SAVINGS SEARCH ---
 $savingsSearchData = buildNameSearch($search, "CONCAT(u.firstname, ' ', u.lastname)");
 
@@ -662,7 +737,7 @@ $faqs = [
     [
         'category' => 'Deposits',
         'questions' => [
-            ['q' => 'How do I make a deposit?', 'a' => 'You can make deposits through our ATM network, mobile app, or by visiting any branch location. For checks, use mobile deposit through our app.'],
+            ['q' => 'How do user make a deposit?', 'a' => 'You can make deposits through our ATM network, mobile app, or by visiting any branch location. For checks, use mobile deposit through our app.'],
             ['q' => 'What is the daily deposit limit?', 'a' => 'ATM deposits are limited to $10,000 per day. There are no limits for deposits made at branch locations.'],
         ],
     ],
