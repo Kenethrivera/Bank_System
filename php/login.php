@@ -24,9 +24,17 @@ if ($result && mysqli_num_rows($result) === 1) {
         $_SESSION['user_id'] = $user['ID'];
         $_SESSION['email'] = $user['Email'];
 
+        if ($user['Status'] === 'Approved') {
+        // Normal flow
         header("Location: ../user/user_dashboard.php");
-        exit;
     } else {
+        // Redirect to Landing Page (Pending or Rejected)
+        header("Location: ../php/account_status.php");
+    } exit;
+    } 
+    
+    
+    else {
         header("Location: ../login.php?error=password");
         exit;
     }
