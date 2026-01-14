@@ -99,6 +99,6 @@
     </div>
   </div>
 </div>
-<script src="script/register.js"></script>
+<script src="script/register copy.js"></script>
 </body>
 </html>

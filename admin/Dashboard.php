@@ -1019,7 +1019,7 @@ if (mysqli_num_rows($accounts_result) > 0) {
                       <label class="form-label">Initial Deposit:</label>
                       <input type="number" id="initialDeposit" name="initial_deposit" class="form-control" min="0"
                         step="0.01" required>
-                      <small id="depositError" class="text-danger small mt-1"></small>
+                        <small id="depositError" class="text-danger small mt-1"></small>
                     </div>
 
                   </div>
@@ -1036,10 +1036,10 @@ if (mysqli_num_rows($accounts_result) > 0) {
               </div>
             </div>
           </div>
-
+          
         </section>
 
-        <!-- LOAN SECTION -->
+        <!-- LOAN SECTION --><!-- LOAN SECTION -->
         <section id="loan" class="flex-grow-2 p-2">
           <div class="container-fluid">
 
@@ -1341,7 +1341,6 @@ if (mysqli_num_rows($accounts_result) > 0) {
             </div>
           </div>
         </section>
-
         <!-- FAQS  -->
         <section id="faq" class="flex-grow-2 p-2">
           <div class="row mb-4 g-3">
@@ -1652,6 +1651,7 @@ if (mysqli_num_rows($accounts_result) > 0) {
   </div>
 </div>
 </body>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="script/script.js"></script>
 
 </html>

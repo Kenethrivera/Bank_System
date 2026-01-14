@@ -1,6 +1,6 @@
 var form = document.getElementById("registerForm");
 var fileInput = document.getElementById("profilePicture");
-var errorBox = document.getElementById("errorMessage");
+var errorBox = document.getElementById("errorMessage"); // Variable name is errorBox
 var preview = document.getElementById("previewWrapper");
 
 var hasImage = false;
@@ -8,129 +8,101 @@ var allowedExtensions = ['jpg', 'jpeg', 'png'];
 
 fileInput.onchange = function () {
   var file = fileInput.files[0];
-
   if (!file) return;
-
   var fileExt = file.name.split('.').pop().toLowerCase();
-
   if (!allowedExtensions.includes(fileExt)) {
     showError("Only JPG and PNG files are allowed.");
     resetInput();
     return;
   }
-
   if (file.size > 5 * 1024 * 1024) {
     showError("Image must be under 5MB.");
     resetInput();
     return;
   }
-
   var reader = new FileReader();
   reader.onload = function () {
-    preview.innerHTML =
-      "<img src='" + reader.result + "' class='profile-preview' style='cursor:pointer' onclick='reselectImage()'>";
+    preview.innerHTML = "<img src='" + reader.result + "' class='profile-preview' style='cursor:pointer' onclick='reselectImage()'>";
     hasImage = true;
     errorBox.classList.add("d-none");
   };
   reader.readAsDataURL(file);
 };
 
-function reselectImage() {
-  fileInput.click();
-}
-function resetInput() {
-  fileInput.value = "";        
-  hasImage = false;
-  resetPlaceholder();          
-}
+function reselectImage() { fileInput.click(); }
+function resetInput() { fileInput.value = ""; hasImage = false; resetPlaceholder(); }
 function resetPlaceholder() {
-  preview.innerHTML =
-    "<div class='upload-box mx-auto' onclick=\"document.getElementById('profilePicture').click()\">" +
-    "<i class='bi bi-camera fs-3 text-muted'></i>" +
-    "</div>";
+  preview.innerHTML = "<div class='upload-box mx-auto' onclick=\"document.getElementById('profilePicture').click()\"><i class='bi bi-camera fs-3 text-muted'></i></div>";
 }
+
 form.onsubmit = function(e) {
-  // Hide error box at start of every attempt
+  // Hide error box at start
   errorBox.classList.add("d-none");
 
-  // Get values specifically by their name attribute to be safe
+  // Get values safely
   var fName = form.querySelector('[name="firstName"]').value.trim();
+  var mName = form.querySelector('[name="middleName"]').value.trim();
   var lName = form.querySelector('[name="lastName"]').value.trim();
   var pNumber = form.querySelector('[name="phone"]').value.trim();
 
-  // 1. Name Validation (Letters only)
-  // This regex allows uppercase, lowercase, spaces, and the ñ character
+  // 1. Name Validation
   var nameRegex = /^[a-zA-Z\sñÑ]+$/;
-
   if (!nameRegex.test(fName)) {
-    e.preventDefault(); // Stop form submission
+    e.preventDefault();
     showError("First Name should only contain letters.");
-    window.scrollTo(0, 0); // Scroll to top to see error
+    return false;
+  }
+  if (mName !== "" && !nameRegex.test(mName)) {
+    e.preventDefault();
+    showError("Middle Name should only contain letters.");
     return;
   }
-
   if (!nameRegex.test(lName)) {
     e.preventDefault();
     showError("Last Name should only contain letters.");
-    window.scrollTo(0, 0);
-    return;
+    return false;
   }
 
-  // 2. Phone Validation (Numbers only)
+  // 2. Phone Validation
   var phoneRegex = /^[0-9]+$/;
   if (!phoneRegex.test(pNumber)) {
     e.preventDefault();
     showError("Phone number should only contain digits.");
-    window.scrollTo(0, 0);
-    return;
+    return false;
   }
 
   // 3. Image Check
   if (!hasImage) {
     e.preventDefault();
     showError("Profile picture is required");
-    resetPlaceholder();
-    return;
+    return false;
   }
 
-  // 4. Password matching check
+  // 4. Password Check
   if (form.password.value !== form.confirmPassword.value) {
     e.preventDefault();
     showError("Passwords do not match");
-    return;
+    return false;
   }
 
   // 5. Age Logic
   var birthInput = form.birthdate.value;
-  if (!birthInput) {
-    e.preventDefault();
-    showError("Please enter your birthdate");
-    return;
-  }
-  
   var birthDate = new Date(birthInput);
   var today = new Date();
   var age = today.getFullYear() - birthDate.getFullYear();
   var m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-  }
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { age--; }
 
   if (age < 18) {
-      e.preventDefault();
-      showError("You must be at least 18 years old to register.");
-      return;
-  }
-
-  if (age > 110) {
-      e.preventDefault();
-      showError("Please enter a valid birthdate (Age limit: 110).");
-      return;
+    e.preventDefault();
+    showError("You must be at least 18 years old.");
+    return false;
   }
 };
 
+// FIXED THIS FUNCTION
 function showError(msg) {
-    jsErrorBox.innerHTML = msg;
-    jsErrorBox.classList.remove("d-none");
-    window.scrollTo(0, 0); // Scroll to top so user sees the message
+    errorBox.innerHTML = msg; // Match the variable name above
+    errorBox.classList.remove("d-none");
+    window.scrollTo(0, 0);
 }

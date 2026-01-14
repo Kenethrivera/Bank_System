@@ -120,7 +120,7 @@ require_once 'php/users_loans_backend.php';
                         <hr class="dropdown-divider">
                     </li>
                     <li>
-                        <a class="dropdown-item text-danger rounded-2" href="logout.php">
+                        <a class="dropdown-item text-danger rounded-2" href="php/logout.php">
                             <i class="bi bi-box-arrow-right me-2"></i>Logout
                         </a>
                     </li>

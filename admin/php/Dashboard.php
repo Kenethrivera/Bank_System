@@ -12,7 +12,7 @@ $admin_row = mysqli_fetch_assoc($admin_query);
 $adminFullName = $admin_row['FirstName'] . " " . ($admin_row['MiddleName'] ? $admin_row['MiddleName'] . " " : "") . $admin_row['LastName'];
 $email = $admin_row['Email'];
 $role = $admin_row['Role'];
-$empId = "EMP-" . str_pad($admin_row['ID'], 3, '0', STR_PAD_LEFT);
+$empId = "ADM-" . str_pad($admin_row['ID'], 4, '0', STR_PAD_LEFT);
 
 /* =========================
    HANDLE LOAN APPROVE / REJECT
