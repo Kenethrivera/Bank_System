@@ -82,11 +82,24 @@ header("Expires: 0"); // Proxies
             </a>
           </li>
           <li class="nav-item">
+  <a href="#admin-management" class="nav-link">
+    <span class="material-symbols-outlined">admin_panel_settings</span>
+    <span class="link-text">Admins</span>
+  </a>
+</li>
+          <li class="nav-item">
+            <a href="#adminProfile"  class="nav-link">
+              <span class="material-symbols-outlined">account_circle</span>
+              <span class="link-text">Profile</span>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="#" id="adminLogoutLink" class="nav-link">
               <span class="material-symbols-outlined">logout</span>
               <span class="link-text">Logout</span>
             </a>
           </li>
+          
         </ul>
       </nav>
 
@@ -148,80 +161,71 @@ header("Expires: 0"); // Proxies
             </div>
             <div class="row g-4">
               <div class="col-lg-6">
-                <div class="card p-4">
-                  <h5 class="fw-semibold mb-3">Account Balances</h5>
-                  <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Total Balance</span>
-                    <span class="fs-4 fw-bold">$45,230.00</span>
-                  </div>
-                  <div class="progress mb-4" style="height:8px;">
-                    <div class="progress-bar bg-success" style="width:75%"></div>
-                  </div>
+  <div class="card p-4">
+    <h5 class="fw-semibold mb-3">Account Balances</h5>
+    
+    <div class="d-flex justify-content-between mb-2">
+      <span class="text-muted">Total Bank Deposits</span>
+      <span class="fs-4 fw-bold">₱<?php echo number_format($totalBalance, 2); ?></span>
+    </div>
+    
+    <div class="progress mb-4" style="height:8px;">
+      <div class="progress-bar bg-success" 
+           role="progressbar" 
+           style="width: <?php echo $progressPercent; ?>%" 
+           aria-valuenow="<?php echo $progressPercent; ?>" 
+           aria-valuemin="0" 
+           aria-valuemax="100">
+      </div>
+    </div>
 
-                  <div class="row border-top pt-3">
-                    <div class="col">
-                      <small class="text-muted">Savings Accounts</small>
-                      <h5 class="fw-semibold">42</h5>
+    <div class="row border-top pt-3">
+      <div class="col">
+        <small class="text-muted">Savings Accounts</small>
+        <h5 class="fw-semibold"><?php echo $totalSavings; ?></h5>
+      </div>
+      <div class="col">
+        <small class="text-muted">Admin Accounts</small>
+        <h5 class="fw-semibold"><?php echo $totalChecking; ?></h5>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="col-lg-6">
+    <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-semibold mb-0">Recent Transactions</h5>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#allTransactionsModal">
+                View All
+            </button>
+        </div>
+
+        <?php if (mysqli_num_rows($recent_result) > 0): ?>
+            <?php while ($trans = mysqli_fetch_assoc($recent_result)): 
+                $isPos = in_array($trans['transaction_type'], ['Cash In', 'Receive Money']);
+            ?>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-<?php echo $isPos ? 'success' : 'danger'; ?> bg-opacity-25 rounded p-2">
+                            <i class="bi bi-cash"></i>
+                        </div>
+                        <div>
+                            <div class="fw-medium"><?php echo $trans['transaction_type']; ?></div>
+                            <small class="text-muted"><?php echo $trans['FirstName']; ?></small>
+                        </div>
                     </div>
-                    <div class="col">
-                      <small class="text-muted">Checking Accounts</small>
-                      <h5 class="fw-semibold">43</h5>
+                    <div class="text-end">
+                        <div class="fw-bold text-<?php echo $isPos ? 'success' : 'danger'; ?>">
+                            ₱<?php echo number_format($trans['amount'], 2); ?>
+                        </div>
                     </div>
-                  </div>
                 </div>
-              </div>
-              <div class="col-lg-6">
-                <div class="card p-4">
-                  <h5 class="fw-semibold mb-3">Recent Transactions</h5>
-                  <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <div class="d-flex align-items-center gap-3">
-                      <div class="bg-success bg-opacity-25 rounded p-2">
-                        <i class="bi bi-arrow-down-left text-success"></i>
-                      </div>
-                      <div>
-                        <div class="fw-medium">Deposit</div>
-                        <small class="text-muted">ACC-10234</small>
-                      </div>
-                    </div>
-                    <div class="text-end">
-                      <div class="fw-semibold text-success">+$1,500</div>
-                      <small class="text-muted">09/16/2025</small>
-                    </div>
-                  </div>
-                  <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <div class="d-flex align-items-center gap-3">
-                      <div class="bg-danger bg-opacity-25 rounded p-2">
-                        <i class="bi bi-arrow-up-right text-danger"></i>
-                      </div>
-                      <div>
-                        <div class="fw-medium">Withdrawal</div>
-                        <small class="text-muted">ACC-55421</small>
-                      </div>
-                    </div>
-                    <div class="text-end">
-                      <div class="fw-semibold text-danger">-$500</div>
-                      <small class="text-muted">09/15/2025</small>
-                    </div>
-                  </div>
-
-                  <div class="d-flex justify-content-between align-items-center py-2">
-                    <div class="d-flex align-items-center gap-3">
-                      <div class="bg-primary bg-opacity-25 rounded p-2">
-                        <i class="bi bi-arrow-left-right text-primary"></i>
-                      </div>
-                      <div>
-                        <div class="fw-medium">Transfer</div>
-                        <small class="text-muted">ACC-99887</small>
-                      </div>
-                    </div>
-                    <div class="text-end">
-                      <div class="fw-semibold text-primary">+$750</div>
-                      <small class="text-muted">09/14/2025</small>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <p class="text-muted text-center">No transactions yet.</p>
+        <?php endif; ?>
+    </div>
+</div>
 
             </div>
 
@@ -231,11 +235,14 @@ header("Expires: 0"); // Proxies
           <div class="container-fluid">
 
             <div class="d-flex justify-content-between align-items-center mb-4">
-              <div>
-                <h2 class="fw-bold mb-0">Account Management</h2>
-                <small class="text-muted">Manage savings and checking accounts</small>
-              </div>
-            </div>
+  <div>
+    <h2 class="fw-bold mb-0">Account Management</h2>
+    <small class="text-muted">Manage savings and checking accounts</small>
+  </div>
+  <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#depositModal">
+    <i class="bi bi-plus-circle me-2"></i>Add Money
+  </button>
+</div>
             <div class="card p-3 mb-4">
               <div class="input-group">
                 <span class="input-group-text bg-white">
@@ -264,70 +271,85 @@ header("Expires: 0"); // Proxies
                   </thead>
                   <tbody>
                     <?php
-                    if (mysqli_num_rows($accounts_result) > 0) {
-                      while ($row = mysqli_fetch_assoc($accounts_result)) {
+if (mysqli_num_rows($accounts_result) > 0) {
+    while ($row = mysqli_fetch_assoc($accounts_result)) {
+        // Build data
+        $fullName = $row['FirstName'] . " " . ($row['MiddleName'] ? $row['MiddleName'] . " " : "") . $row['LastName'];
+        $accountNumber = "ACC-" . str_pad($row['ID'], 5, '0', STR_PAD_LEFT);
 
-                        // Build full name
-                        $fullName = $row['FirstName'] . " " . ($row['MiddleName'] ? $row['MiddleName'] . " " : "") . $row['LastName'];
+        // Escape data for HTML attributes
+        $fullNameEsc = htmlspecialchars($fullName, ENT_QUOTES);
+        $emailEsc = htmlspecialchars($row['Email'], ENT_QUOTES);
+        $phoneEsc = htmlspecialchars($row['Phone'], ENT_QUOTES);
+        $dobEsc = htmlspecialchars($row['Birthdate'], ENT_QUOTES);
+        $addressEsc = htmlspecialchars($row['Address'], ENT_QUOTES);
+        $statusEsc = htmlspecialchars($row['Status'], ENT_QUOTES);
+        $ImgEsc = htmlspecialchars($row['Img'], ENT_QUOTES);
 
-                        $accountNumber = "ACC-" . str_pad($row['ID'], 5, '0', STR_PAD_LEFT);
+        // Class and Balance Logic
+        if ($row['Status'] === 'Approved') {
+            $statusClass = 'status-pill status-approved';
+            $balanceDisplay = '₱ ' . number_format($row['Balance'], 2);
+            $balanceClass = 'fw-semibold text-success';
+        } elseif ($row['Status'] === 'Pending') {
+            $statusClass = 'status-pill status-pending';
+            $balanceDisplay = '— — — — —';
+            $balanceClass = 'text-muted';
+        } else {
+            $statusClass = 'status-pill status-rejected';
+            $balanceDisplay = '— — — — —';
+            $balanceClass = 'text-muted';
+        }
 
-                        if ($row['Status'] === 'Approved') {
-                          $statusClass = 'status-pill status-approved';
-                        } elseif ($row['Status'] === 'Pending') {
-                          $statusClass = 'status-pill status-pending';
-                        } elseif ($row['Status'] === 'Rejected') {
-                          $statusClass = 'status-pill status-rejected';
-                        }
-                        $fullNameEsc = htmlspecialchars($fullName, ENT_QUOTES);
-                        $emailEsc = htmlspecialchars($row['Email'], ENT_QUOTES);
-                        $phoneEsc = htmlspecialchars($row['Phone'], ENT_QUOTES);
-                        $dobEsc = htmlspecialchars($row['Birthdate'], ENT_QUOTES);
-                        $addressEsc = htmlspecialchars($row['Address'], ENT_QUOTES);
-                        $statusEsc = htmlspecialchars($row['Status'], ENT_QUOTES);
-                        $ImgEsc = htmlspecialchars($row['Img'], ENT_QUOTES);
-                        if ($row['Status'] === 'Approved') {
-                          $balanceDisplay = '₱ ' . number_format($row['Balance'], 2);
-                          $balanceClass = 'fw-semibold text-success';
-                        } else {
-                          $balanceDisplay = '— — — — —';
-                          $balanceClass = 'text-muted';
-                        }
+        // --- BUTTON LOGIC ---
+        // Only show View button if status is NOT Rejected
+        $viewButton = "";
+        if ($row['Status'] !== 'Rejected') {
+            $viewButton = "
+                <button type='button' class='btn btn-sm btn-outline-info me-1 view-profile-btn' 
+                        data-bs-toggle='modal' 
+                        data-bs-target='#profileModal'
+                        data-id='{$row['ID']}'
+                        data-name='{$fullNameEsc}'
+                        data-email='{$emailEsc}'
+                        data-phone='{$phoneEsc}'
+                        data-dob='{$dobEsc}'
+                        data-address='{$addressEsc}'
+                        data-status='{$statusEsc}'
+                        data-img='{$ImgEsc}'>
+                    <i class='bi bi-eye'></i>
+                </button>";
+        }
 
-                        echo "<tr data-account='{$accountNumber}' data-name='{$fullNameEsc}' >
-                                  <td>{$accountNumber}</td>
-                                  <td>{$fullNameEsc}</td>
-                                  <td>{$emailEsc}</td>
-                                  <td class='{$balanceClass}'>{$balanceDisplay}</td>
-                                  <td><span class='{$statusClass}'>{$statusEsc}</span></td>
-                                  <td class='text-center'>
-                                      <button type='button' class='btn btn-sm btn-outline-info me-1 view-profile-btn' 
-                                              data-bs-toggle='modal' 
-                                              data-bs-target='#profileModal'
-                                              data-id='{$row['ID']}'
-                                              data-name='{$fullNameEsc}'
-                                              data-email='{$emailEsc}'
-                                              data-phone='{$phoneEsc}'
-                                              data-dob='{$dobEsc}'
-                                              data-address='{$addressEsc}'
-                                              data-status='{$statusEsc}'
-                                              data-img='{$ImgEsc}'>
-                                              
-                                              <i class='bi bi-eye'></i>
-                                      </button>
-                                       <form method='POST' onsubmit=\"return confirm('Are you sure you want to delete this account? This action cannot be undone.');\" style='display:inline;'>
-                                        <input type='hidden' name='delete_account_id' value='{$row['ID']}'>
-                                        <button type='submit' class='btn btn-sm btn-outline-danger'>
-                                          <i class='bi bi-trash'></i>
-                                        </button>
-                                      </form>
-                                  </td>
-                                </tr>";
-                      }
-                    } else {
-                      echo "<tr><td colspan='6'>No Customers Found</td></tr>";
-                    }
-                    ?>
+        // Trash button always shows (used for Rejecting Pending or Deleting Rejected)
+        $deleteButton = "
+            <button type='button' class='btn btn-sm btn-outline-danger' 
+                    data-bs-toggle='modal' 
+                    data-bs-target='#deleteReasonModal' 
+                    data-id='{$row['ID']}'
+                    data-name='{$fullNameEsc}'>
+                <i class='bi bi-trash'></i>
+            </button>";
+        ?>
+
+        <tr data-account="<?php echo $accountNumber; ?>" data-name="<?php echo $fullNameEsc; ?>">
+            <td><?php echo $accountNumber; ?></td>
+            <td><?php echo $fullNameEsc; ?></td>
+            <td><?php echo $emailEsc; ?></td>
+            <td class="<?php echo $balanceClass; ?>"><?php echo $balanceDisplay; ?></td>
+            <td><span class="<?php echo $statusClass; ?>"><?php echo $statusEsc; ?></span></td>
+            <td class="text-center">
+                <?php echo $viewButton; ?>
+                <?php echo $deleteButton; ?>
+            </td>
+        </tr>
+
+    <?php 
+    } 
+} else {
+    echo "<tr><td colspan='6' class='text-center'>No Customers Found</td></tr>";
+}
+?>
                   </tbody>
 
                 </table>
@@ -335,6 +357,72 @@ header("Expires: 0"); // Proxies
             </div>
           </div>
         </section>
+      <div class="modal fade" id="deleteReasonModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="reasonModalTitle">Action Required</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="delete_account_id" id="deleteTargetId">
+                    <input type="hidden" name="action_type" id="actionType">
+                    
+                    <p id="actionWarning" class="mb-3"></p>
+                    
+                    <div id="reasonInputGroup">
+                        <label class="form-label fw-bold">Reason for Rejection</label>
+                        <textarea name="reason" id="rejectionReasonText" class="form-control" placeholder="Explain to the user why..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="confirm_delete" id="confirmBtnText" class="btn btn-danger">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="depositModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">Deposit / Add Money</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Select Account</label>
+            <select name="deposit_account_id" class="form-select" required>
+              <option value="">-- Choose Customer --</option>
+              <?php
+              // Re-fetch approved users for the dropdown
+              $user_query = mysqli_query($conn, "SELECT ID, FirstName, LastName, Balance FROM user_accounts WHERE Status='Approved' AND Role='User' ORDER BY FirstName ASC");
+              while ($u = mysqli_fetch_assoc($user_query)) {
+                $accNo = "ACC-" . str_pad($u['ID'], 5, '0', STR_PAD_LEFT);
+                echo "<option value='{$u['ID']}'>{$u['FirstName']} {$u['LastName']} ({$accNo})</option>";
+              }
+              ?>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Amount to Add (₱)</label>
+            <input type="number" name="deposit_amount" class="form-control form-control-lg" placeholder="0.00" min="1" step="0.01" required>
+          </div>
+          <div class="alert alert-info small">
+            <i class="bi bi-info-circle me-2"></i> This will be added directly to the user's current balance.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" name="confirm_deposit" class="btn btn-success">Update Balance</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
         <div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content rounded-4 overflow-hidden shadow-lg">
@@ -397,71 +485,104 @@ header("Expires: 0"); // Proxies
 
                 </div>
                 <form method="POST">
-                  <input type="hidden" name="account_id" id="modalAccountId">
+  <input type="hidden" name="account_id" id="modalAccountId">
 
-                  <div class="d-flex flex-column flex-md-row gap-3 pt-4 border-top mt-4">
-                    <button type="submit" name="update_status" value="Rejected" class="btn btn-outline-danger w-100">
-                      <i class="bi bi-x-circle me-2"></i>Reject
-                    </button>
-                    <button type="submit" name="update_status" value="Approved" class="btn btn-success w-100">
-                      <i class="bi bi-check-circle me-2"></i>Approve
-                    </button>
-                  </div>
-                </form>
+  <div id="decisionButtons" class="d-flex flex-column flex-md-row gap-3 pt-4 border-top mt-4">
+    <button type="button" 
+            class="btn btn-outline-danger w-100" 
+            id="profileRejectBtn"
+            data-bs-toggle="modal" 
+            data-bs-target="#deleteReasonModal">
+        <i class="bi bi-x-circle me-2"></i>Reject
+    </button>
+    
+    <button type="submit" name="update_status" value="Approved" class="btn btn-success w-100">
+        <i class="bi bi-check-circle me-2"></i>Approve
+    </button>
+</div>
+  
+  <div id="alreadyApprovedMsg" class="mt-4 text-center d-none">
+     <span class="badge bg-success-subtle text-success p-2 w-100 border border-success">
+       <i class="bi bi-patch-check-fill me-2"></i>Account is already Approved
+     </span>
+  </div>
+</form>
               </div>
             </div>
           </div>
         </div>
+ 
         <section id="transactions">
-          <div class="container-fluid">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-0">Transaction Management</h2>
+        <small class="text-muted">View and manage all transactions</small>
+      </div>
+    </div>
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
-              <div>
-                <h2 class="fw-bold mb-0">Transaction Management</h2>
-                <small class="text-muted">View and manage all transactions</small>
-              </div>
-            </div>
-            <div class="card p-3 mb-4">
-              <div class="input-group">
-                <span class="input-group-text bg-white">
-                  <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" class="form-control" placeholder="Search by account number or type.">
-              </div>
-            </div>
+    <div class="card p-3 mb-4">
+      <div class="input-group">
+        <span class="input-group-text bg-white">
+          <i class="bi bi-search text-muted"></i>
+        </span>
+        <input type="text" id="transactionSearchInput" class="form-control" placeholder="Search by account number, type, or reference...">
+      </div>
+    </div>
 
-            <div class="card p-3">
-              <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Date</th>
-                      <th>Account</th>
-                      <th>Type</th>
-                      <th>Amount</th>
-                      <th>Recipient</th>
-                      <th>Description</th>
-                      <th>Reference</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>2025-12-16</td>
-                      <td>ACC-10001</td>
-                      <td><span class="badge bg-success">Deposit</span></td>
-                      <td class="text-success">+$1,500</td>
-                      <td>ACC-10006</td>
-                      <td>Salary deposit</td>
-                      <td>1321639216</td>
-                    </tr>
-
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
-        </section>
+    <div class="card p-3">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle" id="transactionTable">
+          <thead class="table-light">
+            <tr>
+              <th>Date</th>
+              <th>Account</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Description</th>
+              <th>Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (mysqli_num_rows($manage_trans_result) > 0): ?>
+              <?php while ($row = mysqli_fetch_assoc($manage_trans_result)): 
+                // Logic for visual styling
+                $type = $row['transaction_type'];
+                $isPositive = in_array($type, ['Cash In', 'Receive Money', 'Deposit']);
+                
+                $badgeClass = $isPositive ? 'bg-success' : 'bg-danger';
+                if ($type == 'Send Money' || $type == 'Transfer') $badgeClass = 'bg-primary';
+                
+                $textClass = $isPositive ? 'text-success' : 'text-danger';
+                $prefix = $isPositive ? '+' : '-';
+                
+                $formattedAcc = "ACC-" . str_pad($row['user_id'], 5, '0', STR_PAD_LEFT);
+              ?>
+                <tr>
+                  <td class="small"><?php echo date('Y-m-d H:i', strtotime($row['created_at'])); ?></td>
+                  <td>
+                    <div class="fw-bold"><?php echo $formattedAcc; ?></div>
+                    <small class="text-muted"><?php echo htmlspecialchars($row['FirstName'] . ' ' . $row['LastName']); ?></small>
+                  </td>
+                  <td><span class="badge <?php echo $badgeClass; ?>"><?php echo $type; ?></span></td>
+                  <td class="<?php echo $textClass; ?> fw-bold">
+                    <?php echo $prefix . '₱' . number_format($row['amount'], 2); ?>
+                  </td>
+                  <td class="text-muted small"><?php echo htmlspecialchars($row['description']); ?></td>
+                  <td><code class="text-dark">TRX-<?php echo $row['transaction_id']; ?><?php echo strtotime($row['created_at']); ?></code></td>
+                </tr>
+              <?php endwhile; ?>
+            <?php else: ?>
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">No transactions found in database.</td>
+              </tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
 
         <!--SAVINGS SECTION  -->
         <section id="savings" class="flex-grow-2 p-2">
@@ -1261,8 +1382,185 @@ header("Expires: 0"); // Proxies
             </div>
           </div>
         </section>
+        
+<section id="admin-management">
+  <div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-bold mb-0">Admin Management</h2>
+        <small class="text-muted">Manage system administrators and staff access</small>
+      </div>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAdminModal">
+        <i class="bi bi-person-plus-fill me-2"></i>Create New Admin
+      </button>
+    </div>
 
-        <!-- LOGOUT -->
+    <div class="card p-1">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Admin Name</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $admins = mysqli_query($conn, "SELECT * FROM user_accounts WHERE Role = 'Admin' ORDER BY ID DESC");
+            while ($adm = mysqli_fetch_assoc($admins)):
+              $admFull = $adm['FirstName'] . " " . $adm['LastName'];
+            ?>
+              <tr>
+                <td>
+                  <div class="fw-bold"><?= htmlspecialchars($admFull) ?></div>
+                  <small class="text-muted">ID: ADM-<?= str_pad($adm['ID'], 4, '0', STR_PAD_LEFT) ?></small>
+                </td>
+                <td><?= htmlspecialchars($adm['Email']) ?></td>
+                <td><span class="badge bg-success-subtle text-success border border-success-subtle">Active</span></td>
+                <td class="text-center">
+                  <button class="btn btn-sm btn-outline-info view-profile-btn" 
+                          data-bs-toggle="modal" data-bs-target="#profileModal"
+                          data-id="<?= $adm['ID'] ?>" data-name="<?= htmlspecialchars($admFull) ?>"
+                          data-email="<?= htmlspecialchars($adm['Email']) ?>" data-phone="<?= htmlspecialchars($adm['Phone']) ?>"
+                          data-dob="<?= htmlspecialchars($adm['Birthdate']) ?>" data-address="<?= htmlspecialchars($adm['Address']) ?>"
+                          data-status="<?= htmlspecialchars($adm['Status']) ?>" data-img="<?= htmlspecialchars($adm['Img']) ?>">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="modal fade" id="createAdminModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content rounded-4 shadow-lg">
+      <form method="POST" enctype="multipart/form-data">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">New Administrator Account</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          
+          <div class="text-center mb-4">
+            <div id="adminPreviewWrapper">
+              <div class="upload-box mx-auto" onclick="document.getElementById('adminProfilePicture').click()" 
+                   style="width:100px; height:100px; border:2px dashed #ccc; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                <i class="bi bi-camera fs-3 text-muted"></i>
+              </div>
+            </div>
+            <input type="file" name="adm_img" id="adminProfilePicture" class="d-none" accept="image/*">
+            <small class="text-muted">Admin Profile Photo</small>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">First Name</label>
+              <input type="text" name="adm_fname" class="form-control" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Middle Name</label>
+              <input type="text" name="adm_mname" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Last Name</label>
+              <input type="text" name="adm_lname" class="form-control" required>
+            </div>
+            
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Email Address</label>
+              <input type="email" name="adm_email" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Phone Number</label>
+              <input type="tel" name="adm_phone" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Birthdate</label>
+              <input type="date" name="adm_dob" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Address</label>
+              <input type="text" name="adm_address" class="form-control" required>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label small fw-bold">Password</label>
+              <input type="password" name="adm_password" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" name="create_admin" class="btn btn-primary px-4">Create Admin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div><section id="adminProfile" class="container-fluid py-4">
+    <div class="mb-4 text-center">
+        <h3 class="fw-bold mb-1">Admin Profile</h3>
+        <p class="text-muted">Manage your account information</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h4 class="fw-semibold mb-4 text-center text-lg-start">Personal Information</h4>
+
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded mb-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">Full Name</small>
+                            <div class="fw-semibold"><?php echo htmlspecialchars($adminFullName); ?></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded mb-3">
+                        <div class="rounded-circle bg-success bg-opacity-25 text-success d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                            <i class="bi bi-envelope"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">Email</small>
+                            <div class="fw-semibold"><?php echo htmlspecialchars($email); ?></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded mb-3">
+                        <div class="rounded-circle bg-secondary bg-opacity-25 text-secondary d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                            <i class="bi bi-briefcase"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">Role</small>
+                            <div class="fw-semibold"><?php echo htmlspecialchars($role); ?></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                        <div class="rounded-circle bg-warning bg-opacity-25 text-warning d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                            <i class="bi bi-calendar"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">Employee ID</small>
+                            <div class="fw-semibold"><?php echo $empId; ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- LOGOUT -->
         <!-- Logout Modal -->
         <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered">
@@ -1298,9 +1596,61 @@ header("Expires: 0"); // Proxies
 
       </main>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>const isAdmin = <?= isset($_SESSION['admin_id']) ? 'true' : 'false' ?>;</script>
-    <script src="script/script.js"></script>
+    <div class="modal fade" id="allTransactionsModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalLabel">Full Transaction History</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th class="text-end">Amount</th>
+                <th>Balance After</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php 
+              // Reset pointer to the start of the results
+              mysqli_data_seek($all_result, 0); 
+              while ($row = mysqli_fetch_assoc($all_result)): 
+                $isPos = in_array($row['transaction_type'], ['Cash In', 'Receive Money']);
+              ?>
+              <tr>
+                <td class="small"><?php echo date('M d, Y H:i', strtotime($row['created_at'])); ?></td>
+                <td>
+                  <div class="fw-bold"><?php echo htmlspecialchars($row['FirstName'] . ' ' . $row['LastName']); ?></div>
+                  <small class="text-muted">ID: <?php echo $row['user_id']; ?></small>
+                </td>
+                <td>
+                  <span class="badge <?php echo $isPos ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'; ?>">
+                    <?php echo $row['transaction_type']; ?>
+                  </span>
+                </td>
+                <td class="text-muted small"><?php echo htmlspecialchars($row['description']); ?></td>
+                <td class="text-end fw-bold <?php echo $isPos ? 'text-success' : 'text-danger'; ?>">
+                  <?php echo ($isPos ? '+' : '-') . '₱' . number_format($row['amount'], 2); ?>
+                </td>
+                <td class="text-end text-muted">₱<?php echo number_format($row['balance_after'], 2); ?></td>
+              </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 
 

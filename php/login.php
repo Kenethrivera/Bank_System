@@ -1,36 +1,41 @@
 <?php
 session_start();
-
 $conn = mysqli_connect('localhost', 'root', '', 'bank_db');
-if (!$conn) {
-    die("Connection Error");
-}
 
-$email = $_POST['email'];
-$password = $_POST['password'];
+if (isset($_POST['email']) && isset($_POST['password'])) {
+    $email = trim($_POST['email']);
+    $password = $_POST['password'];
 
-if ($email === 'admin@bank.com' && $password === 'admin123') {
-    $_SESSION['email'] = $email;
-    header("Location: ../admin/dashboard.php");
-    exit;
-}
-$query = "SELECT * FROM user_accounts WHERE Email = '$email'";
-$result = mysqli_query($conn, $query);
+    $stmt = $conn->prepare("SELECT ID, Email, Password, Role, Status FROM user_accounts WHERE Email = ? LIMIT 1");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-if ($result && mysqli_num_rows($result) === 1) {
-    $user = mysqli_fetch_assoc($result);
+    if ($user = $result->fetch_assoc()) {
+        if ($password === $user['Password']) {
+            
+            // CRITICAL: Always set the session ID first so status page works
+            $_SESSION['user_id'] = $user['ID'];
+            $_SESSION['email']   = $user['Email'];
+            $_SESSION['role']    = $user['Role'];
 
-    if ($password === $user['Password']) {
-        $_SESSION['user_id'] = $user['ID'];
-        $_SESSION['email'] = $user['Email'];
+            // Check Status
+            if ($user['Status'] === 'Pending' || $user['Status'] === 'Rejected') {
+                header("Location: ../user/account_status.php");
+                exit;
+            }
 
-        header("Location: ../user/user_dashboard.php");
-        exit;
-    } else {
-        header("Location: ../login.php?error=password");
-        exit;
+            if ($user['Status'] === 'Approved') {
+                session_regenerate_id(true);
+                if ($user['Role'] === 'Admin') {
+                    header("Location: ../admin/dashboard.php");
+                } else {
+                    header("Location: ../user/user_dashboard.php");
+                }
+                exit;
+            }
+        }
     }
-} else {
-    header("Location: ../login.php?error=notfound");
+    header("Location: ../login.php?error=failed");
     exit;
 }

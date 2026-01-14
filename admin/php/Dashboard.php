@@ -1,8 +1,18 @@
 <?php
 $conn = mysqli_connect('localhost', 'root', '', 'bank_db');
-if (!$conn) {
-    die('Connection Error: ' . mysqli_connect_error());
-}
+if (!$conn) { die('Connection Error: ' . mysqli_connect_error()); }
+
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+
+$admin_session_id = $_SESSION['user_id'] ?? 0;
+$admin_query = mysqli_query($conn, "SELECT FirstName, MiddleName, LastName, Email, Role, ID FROM user_accounts WHERE ID = '$admin_session_id'");
+$admin_row = mysqli_fetch_assoc($admin_query);
+
+$adminFullName = $admin_row['FirstName'] . " " . ($admin_row['MiddleName'] ? $admin_row['MiddleName'] . " " : "") . $admin_row['LastName'];
+$email = $admin_row['Email'];
+$role = $admin_row['Role'];
+$empId = "EMP-" . str_pad($admin_row['ID'], 3, '0', STR_PAD_LEFT);
 
 /* =========================
    HANDLE LOAN APPROVE / REJECT
@@ -175,30 +185,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// account Delete
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST'
-    && isset($_POST['delete_account_id'])
-) {
-
-    $accountId = (int) $_POST['delete_account_id'];
-
-    $stmt = mysqli_prepare(
-        $conn,
-        "DELETE FROM user_accounts WHERE ID=?"
-    );
-    mysqli_stmt_bind_param($stmt, 'i', $accountId);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
-
-    header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
-    exit;
-}
-
-
 // DASHBOARD DATA
 /* Count customers */
-$total_customers_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts");
+$total_customers_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts Where Role='User'");
 $row = mysqli_fetch_assoc($total_customers_result);
 $totalCustomers = $row['total'];
 
@@ -213,7 +202,7 @@ $row = mysqli_fetch_assoc($pending_loan);
 $pendingLoan = $row['PendingLoans'];
 
 /* Get accounts */
-$accounts_result = mysqli_query($conn, "SELECT * FROM user_accounts");
+$accounts_result = mysqli_query($conn, "SELECT * FROM user_accounts Where Role='User'");
 if (!$accounts_result) {
     die("Accounts Query Error: " . mysqli_error($conn));
 }
@@ -272,6 +261,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_loan'])) {
 
     header("Location: " . $_SERVER['PHP_SELF'] . '#loan');
     exit();
+}
+// ADMIN CREATE
+/* ---- CREATE NEW ADMIN ---- */
+if (isset($_POST['create_admin'])) {
+    // ASSIGN FORM DATA TO VARIABLES FIRST
+    $fname   = mysqli_real_escape_string($conn, $_POST['adm_fname']);
+    $mname   = mysqli_real_escape_string($conn, $_POST['adm_mname'] ?? '');
+    $lname   = mysqli_real_escape_string($conn, $_POST['adm_lname']);
+    $email   = mysqli_real_escape_string($conn, $_POST['adm_email']);
+    $phone   = mysqli_real_escape_string($conn, $_POST['adm_phone']);
+    $dob     = mysqli_real_escape_string($conn, $_POST['adm_dob']);
+    $address = mysqli_real_escape_string($conn, $_POST['adm_address']);
+    $pass    = $_POST['adm_password']; 
+
+    // 1. Handle Image Upload Logic
+    $imgName = "profile/default.jpg"; 
+    
+    if (isset($_FILES['adm_img']) && $_FILES['adm_img']['error'] === 0) {
+        $targetDir = "../profile/"; 
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = "admin_" . time() . "_" . basename($_FILES["adm_img"]["name"]);
+        $targetFilePath = $targetDir . $fileName;
+        $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
+
+        $allowTypes = array('jpg', 'png', 'jpeg', 'gif');
+        if (in_array(strtolower($fileType), $allowTypes)) {
+            if (move_uploaded_file($_FILES["adm_img"]["tmp_name"], $targetFilePath)) {
+                $imgName = "profile/" . $fileName; 
+            }
+        }
+    }
+
+    // 2. Insert into Database
+    $sql = "INSERT INTO user_accounts (FirstName, MiddleName, LastName, Email, Phone, Birthdate, Address, Password, Img, Role, Status, Balance) 
+            VALUES ('$fname', '$mname', '$lname', '$email', '$phone', '$dob', '$address', '$pass', '$imgName', 'Admin', 'Approved', 0.00)";
+
+    if (mysqli_query($conn, $sql)) {
+        header("Location: " . $_SERVER['PHP_SELF'] . "#admin-management");
+        exit();
+    } else {
+        echo "Error: " . mysqli_error($conn);
+    }
+}
+
+// =======
+// ACOUNT MANAGEMENT
+// =========
+
+if (isset($_POST['confirm_deposit'])) {
+    $accountId = mysqli_real_escape_string($conn, $_POST['deposit_account_id']);
+    $amount = mysqli_real_escape_string($conn, $_POST['deposit_amount']);
+
+    if ($amount > 0) {
+        // SQL to increment the balance
+        $sql = "UPDATE user_accounts SET Balance = Balance + $amount WHERE ID = '$accountId'" ;
+        
+        if (mysqli_query($conn, $sql)) {
+            echo "<script>alert('Balance updated successfully!'); window.location.href=window.location.href;</script>";
+        } else {
+            echo "<script>alert('Error updating balance: " . mysqli_error($conn) . "');</script>";
+        }
+    }
 }
 
 // ============================================
@@ -350,8 +404,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
     header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
     exit();
 }
+/* 1. Dashboard View (Limited to 5) */
+/* 1. DATA FOR THE DASHBOARD CARD (TOP 5 ONLY) */
+$recent_query = "SELECT t.*, u.FirstName, u.LastName 
+                 FROM transactions t 
+                 LEFT JOIN user_accounts u ON t.user_id = u.ID 
+                 ORDER BY t.created_at DESC LIMIT 5";
+$recent_result = mysqli_query($conn, $recent_query);
 
-// NEW SAVINGS APPLICATION (by Admin)
+/* 2. DATA FOR THE MODAL (EVERYTHING) */
+$all_query = "SELECT t.*, u.FirstName, u.LastName 
+              FROM transactions t 
+              LEFT JOIN user_accounts u ON t.user_id = u.ID 
+              ORDER BY t.created_at DESC";
+$all_result = mysqli_query($conn, $all_query);
+//=============================
+// DELTE ACCOIUNT
+//============================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
+    $id = intval($_POST['delete_account_id']);
+    $action = $_POST['action_type'];
+
+    if ($action === 'delete') {
+        // PERMANENT DATABASE DELETION
+        $query = "DELETE FROM user_accounts WHERE ID = $id";
+    } else {
+        // REJECTION ONLY
+        $reason = mysqli_real_escape_string($conn, $_POST['reason']);
+        $query = "UPDATE user_accounts SET Status = 'Rejected', RejectionReason = '$reason' WHERE ID = $id";
+    }
+
+    if (mysqli_query($conn, $query)) {
+        header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
+        exit();
+    } else {
+        echo "Database Error: " . mysqli_error($conn);
+    }
+}
+
+
+// FETCH TRANSACTION SECTION
+
+$manage_trans_query = "
+    SELECT t.*, u.FirstName, u.LastName 
+    FROM transactions t
+    LEFT JOIN user_accounts u ON t.user_id = u.ID
+    ORDER BY t.created_at DESC";
+$manage_trans_result = mysqli_query($conn, $manage_trans_query);
+
+// ======================================================
+// Dashboard
+// ======================================================
+// 1. Get Total Balance of all users
+$balance_query = mysqli_query($conn, "SELECT SUM(Balance) AS total_sum FROM user_accounts Where Status='Approved'");
+$balance_data = mysqli_fetch_assoc($balance_query);
+$totalBalance = $balance_data['total_sum'] ?? 0;
+
+// 2. Count Savings Accounts (from your savings_accounts table)
+$savings_count_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM savings_accounts");
+$totalSavings = mysqli_fetch_assoc($savings_count_query)['total'];
+
+// 3. Count Regular User Accounts (Checking)
+$checking_count_query = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts WHERE Role = 'Admin'");
+$totalChecking = mysqli_fetch_assoc($checking_count_query)['total'];
+
+// 4. Calculate Progress Bar (Ratio of Savings to Total Accounts)
+$total_all = $totalSavings + $totalChecking;
+$progressPercent = ($total_all > 0) ? ($totalSavings / $total_all) * 100 : 0;
 // =======================================================
 // NEW SAVINGS APPLICATION (ADMIN) — FRONTEND SAFE
 // =======================================================
@@ -574,6 +693,7 @@ function executeQuery($conn, $sql, $searchData = null)
     mysqli_stmt_execute($stmt);
     return mysqli_stmt_get_result($stmt);
 }
+
 
 // GET SEARCH INPUT
 $search = $_GET['search'] ?? '';
