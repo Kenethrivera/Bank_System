@@ -404,21 +404,50 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // DELTE USERS
 // Listener for the Delete Reason Modal
-const deleteReasonModal = document.getElementById('deleteReasonModal');
+document.addEventListener('DOMContentLoaded', () => {
+    const reasonGroup = document.getElementById('reasonInputGroup');
+    const reasonText = document.getElementById('rejectionReasonText');
+    const actionWarning = document.getElementById('actionWarning');
+    const modalTitle = document.getElementById('reasonModalTitle');
+    const confirmBtn = document.getElementById('confirmBtnText');
 
-if (deleteReasonModal) {
-    deleteReasonModal.addEventListener('show.bs.modal', function (event) {
-        // Button that triggered the modal
-        const button = event.relatedTarget; 
-        
-        // Extract ID from data-id attribute of the button
-        const accountId = button.getAttribute('data-id');
-        
-        // Update the modal's hidden input value
-        const idInput = document.getElementById('deleteTargetId');
-        idInput.value = accountId;
-    });
-}
+    // 1. Logic for REJECT (from Profile Modal)
+    const profileRejectBtn = document.getElementById('profileRejectBtn');
+    if (profileRejectBtn) {
+        profileRejectBtn.addEventListener('click', function() {
+            const currentId = document.getElementById('modalAccountId').value;
+            document.getElementById('deleteTargetId').value = currentId;
+            document.getElementById('actionType').value = 'reject';
+            
+            // UI Adjustments for Reject
+            modalTitle.innerText = "Reject Application";
+            actionWarning.innerHTML = "This marks the account as <b class='text-danger'>Rejected</b>. The user will see the reason.";
+            confirmBtn.innerText = "Confirm Reject";
+            reasonGroup.classList.remove('d-none'); // Show reason
+            reasonText.required = true; // Make it mandatory
+        });
+    }
+
+    // 2. Logic for DELETE (from Trash Bin in Table)
+    const deleteReasonModal = document.getElementById('deleteReasonModal');
+    if (deleteReasonModal) {
+        deleteReasonModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget; 
+            if (button && button.getAttribute('data-id')) {
+                const accountId = button.getAttribute('data-id');
+                document.getElementById('deleteTargetId').value = accountId;
+                document.getElementById('actionType').value = 'delete';
+                
+                // UI Adjustments for Delete
+                modalTitle.innerText = "Delete Account Permanently";
+                actionWarning.innerHTML = "<div class='alert alert-danger'><b>Warning:</b> This will permanently remove this record from the database. This cannot be undone.</div>";
+                confirmBtn.innerText = "Delete Permanently";
+                reasonGroup.classList.add('d-none'); // Hide reason
+                reasonText.required = false; // Not needed
+            }
+        });
+    }
+});
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('transactionSearchInput');
     const table = document.getElementById('transactionTable');
@@ -454,7 +483,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
+    
 });
+
+
 // ADMIN LOGOUT
 adminLogoutLink.addEventListener('click', function(e) {
     e.preventDefault(); // prevent default anchor behavior
@@ -462,3 +494,4 @@ adminLogoutLink.addEventListener('click', function(e) {
     const logoutModal = new bootstrap.Modal(document.getElementById('logoutModal'));
     logoutModal.show();
 });
+  

@@ -1,8 +1,18 @@
 <?php
 $conn = mysqli_connect('localhost', 'root', '', 'bank_db');
-if (!$conn) {
-    die('Connection Error: ' . mysqli_connect_error());
-}
+if (!$conn) { die('Connection Error: ' . mysqli_connect_error()); }
+
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
+
+$admin_session_id = $_SESSION['user_id'] ?? 0;
+$admin_query = mysqli_query($conn, "SELECT FirstName, MiddleName, LastName, Email, Role, ID FROM user_accounts WHERE ID = '$admin_session_id'");
+$admin_row = mysqli_fetch_assoc($admin_query);
+
+$adminFullName = $admin_row['FirstName'] . " " . ($admin_row['MiddleName'] ? $admin_row['MiddleName'] . " " : "") . $admin_row['LastName'];
+$email = $admin_row['Email'];
+$role = $admin_row['Role'];
+$empId = "EMP-" . str_pad($admin_row['ID'], 3, '0', STR_PAD_LEFT);
 
 /* =========================
    HANDLE LOAN APPROVE / REJECT
@@ -337,31 +347,27 @@ $all_result = mysqli_query($conn, $all_query);
 // DELTE ACCOIUNT
 //============================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_delete'])) {
-    
     $id = intval($_POST['delete_account_id']);
-    $reason = mysqli_real_escape_string($conn, $_POST['reason']);
+    $action = $_POST['action_type'];
 
-    // We use UPDATE instead of DELETE so the user can see the reason on their status page
-    $query = "UPDATE user_accounts SET Status = 'Rejected', RejectionReason = '$reason' WHERE ID = $id";
-    
+    if ($action === 'delete') {
+        // PERMANENT DATABASE DELETION
+        $query = "DELETE FROM user_accounts WHERE ID = $id";
+    } else {
+        // REJECTION ONLY
+        $reason = mysqli_real_escape_string($conn, $_POST['reason']);
+        $query = "UPDATE user_accounts SET Status = 'Rejected', RejectionReason = '$reason' WHERE ID = $id";
+    }
+
     if (mysqli_query($conn, $query)) {
         header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
         exit();
     } else {
-        echo "Error updating record: " . mysqli_error($conn);
+        echo "Database Error: " . mysqli_error($conn);
     }
 }
 
-// Handle Approval (Make sure to clear reason if previously rejected)
-if (isset($_POST['update_status']) && $_POST['update_status'] === 'Approved') {
-    $id = intval($_POST['account_id']);
-    
-    $query = "UPDATE user_accounts SET Status = 'Approved', RejectionReason = NULL WHERE ID = $id";
-    mysqli_query($conn, $query);
-    
-    header("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
-    exit();
-}
+
 // FETCH TRANSACTION SECTION
 
 $manage_trans_query = "
@@ -612,6 +618,7 @@ function executeQuery($conn, $sql, $searchData = null)
     mysqli_stmt_execute($stmt);
     return mysqli_stmt_get_result($stmt);
 }
+
 
 // GET SEARCH INPUT
 $search = $_GET['search'] ?? '';

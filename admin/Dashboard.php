@@ -88,11 +88,18 @@ header("Expires: 0"); // Proxies
   </a>
 </li>
           <li class="nav-item">
+            <a href="#adminProfile"  class="nav-link">
+              <span class="material-symbols-outlined">account_circle</span>
+              <span class="link-text">Profile</span>
+            </a>
+          </li>
+          <li class="nav-item">
             <a href="#" id="adminLogoutLink" class="nav-link">
               <span class="material-symbols-outlined">logout</span>
               <span class="link-text">Logout</span>
             </a>
           </li>
+          
         </ul>
       </nav>
 
@@ -350,23 +357,28 @@ if (mysqli_num_rows($accounts_result) > 0) {
             </div>
           </div>
         </section>
-        <div class="modal fade" id="deleteReasonModal" tabindex="-1">
+      <div class="modal fade" id="deleteReasonModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="POST">
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title">Delete Account / Reject Application</h5>
+                    <h5 class="modal-title" id="reasonModalTitle">Action Required</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" name="delete_account_id" id="deleteTargetId">
-                    <label class="form-label fw-bold">Reason for Rejection/Deletion</label>
-                    <textarea name="reason" class="form-control" placeholder="Explain why this account is being removed..." required></textarea>
-                    <p class="text-muted small mt-2">This reason will be visible to the user on their status page.</p>
+                    <input type="hidden" name="action_type" id="actionType">
+                    
+                    <p id="actionWarning" class="mb-3"></p>
+                    
+                    <div id="reasonInputGroup">
+                        <label class="form-label fw-bold">Reason for Rejection</label>
+                        <textarea name="reason" id="rejectionReasonText" class="form-control" placeholder="Explain to the user why..."></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" name="confirm_delete" class="btn btn-danger">Confirm Delete</button>
+                    <button type="submit" name="confirm_delete" id="confirmBtnText" class="btn btn-danger">Confirm</button>
                 </div>
             </form>
         </div>
@@ -476,13 +488,18 @@ if (mysqli_num_rows($accounts_result) > 0) {
   <input type="hidden" name="account_id" id="modalAccountId">
 
   <div id="decisionButtons" class="d-flex flex-column flex-md-row gap-3 pt-4 border-top mt-4">
-    <button type="submit" name="update_status" value="Rejected" class="btn btn-outline-danger w-100">
-      <i class="bi bi-x-circle me-2"></i>Reject
+    <button type="button" 
+            class="btn btn-outline-danger w-100" 
+            id="profileRejectBtn"
+            data-bs-toggle="modal" 
+            data-bs-target="#deleteReasonModal">
+        <i class="bi bi-x-circle me-2"></i>Reject
     </button>
+    
     <button type="submit" name="update_status" value="Approved" class="btn btn-success w-100">
-      <i class="bi bi-check-circle me-2"></i>Approve
+        <i class="bi bi-check-circle me-2"></i>Approve
     </button>
-  </div>
+</div>
   
   <div id="alreadyApprovedMsg" class="mt-4 text-center d-none">
      <span class="badge bg-success-subtle text-success p-2 w-100 border border-success">
@@ -494,6 +511,7 @@ if (mysqli_num_rows($accounts_result) > 0) {
             </div>
           </div>
         </div>
+ 
         <section id="transactions">
   <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -1289,7 +1307,7 @@ if (mysqli_num_rows($accounts_result) > 0) {
       </button>
     </div>
 
-    <div class="card p-3">
+    <div class="card p-1">
       <div class="table-responsive">
         <table class="table table-hover align-middle">
           <thead class="table-light">
@@ -1397,8 +1415,64 @@ if (mysqli_num_rows($accounts_result) > 0) {
       </form>
     </div>
   </div>
-</div>
-        <!-- LOGOUT -->
+</div><section id="adminProfile" class="container-fluid py-4">
+    <div class="mb-4 text-center">
+        <h3 class="fw-bold mb-1">Admin Profile</h3>
+        <p class="text-muted">Manage your account information</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h4 class="fw-semibold mb-4 text-center text-lg-start">Personal Information</h4>
+
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded mb-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">Full Name</small>
+                            <div class="fw-semibold"><?php echo htmlspecialchars($adminFullName); ?></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded mb-3">
+                        <div class="rounded-circle bg-success bg-opacity-25 text-success d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                            <i class="bi bi-envelope"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">Email</small>
+                            <div class="fw-semibold"><?php echo htmlspecialchars($email); ?></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded mb-3">
+                        <div class="rounded-circle bg-secondary bg-opacity-25 text-secondary d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                            <i class="bi bi-briefcase"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">Role</small>
+                            <div class="fw-semibold"><?php echo htmlspecialchars($role); ?></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                        <div class="rounded-circle bg-warning bg-opacity-25 text-warning d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
+                            <i class="bi bi-calendar"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted">Employee ID</small>
+                            <div class="fw-semibold"><?php echo $empId; ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- LOGOUT -->
         <!-- Logout Modal -->
         <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
           <div class="modal-dialog modal-dialog-centered">
