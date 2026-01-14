@@ -23,16 +23,8 @@
           <p class="text-muted mb-0">Sign in to your account</p>
         </div><?php 
 if (isset($_GET['error'])) {
-
-    if ($_GET['error'] === 'password') {
-        $msg = 'Invalid password';
-    } elseif ($_GET['error'] === 'notfound') {
-        $msg = 'Account not found';
-    } else {
-        $msg = 'Login failed';
-    }
-
-    echo '<div class="alert alert-danger" role="alert">' . $msg . '</div>';
+    $msg = 'Invalid credentials or account inactive.';
+    echo '<div class="alert alert-danger" role="alert"><i class="bi bi-shield-lock-fill me-2"></i>' . htmlspecialchars($msg) . '</div>';
 }
 ?>
 

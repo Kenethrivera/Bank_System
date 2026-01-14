@@ -1,16 +1,43 @@
 <?php
 session_start();
 
+// 1. Establish the database connection first
+// Make sure these credentials match your database
+$conn = mysqli_connect('localhost', 'root', '', 'bank_db');
+
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
+// 2. Security Check: Is the user logged in?
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../login.php");
     exit;
 }
 
-$userId = $_SESSION['user_id'];  // pass this to back_end.php
+// 3. Status Gatekeeper: Prevent unapproved access
+$userId = $_SESSION['user_id'];
+$check = mysqli_query($conn, "SELECT Status FROM user_accounts WHERE ID = '$userId'");
+
+// Error handling if query fails
+if (!$check) {
+    die("Query Error: " . mysqli_error($conn));
+}
+
+$userData = mysqli_fetch_assoc($check);
+
+// If the account isn't approved, send them back to the status page
+if ($userData['Status'] !== 'Approved') {
+    header("Location: account_status.php");
+    exit;
+}
+
+// 4. Load your back-end logic files
+// (These will now inherit the $conn variable and $userId)
+$userId = $_SESSION['user_id'];  
 include 'php/back_end.php';
 require_once 'php/users_loans_backend.php';
 ?>
-
 <!doctype html>
 
 <head>

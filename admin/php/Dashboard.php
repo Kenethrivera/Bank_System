@@ -275,8 +275,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_status'])) {
     header("Location: " . $_SERVER['PHP_SELF'] . "#savings");
     exit();
 }
+/* 1. Dashboard View (Limited to 5) */
+/* 1. DATA FOR THE DASHBOARD CARD (TOP 5 ONLY) */
+$recent_query = "SELECT t.*, u.FirstName, u.LastName 
+                 FROM transactions t 
+                 LEFT JOIN user_accounts u ON t.user_id = u.ID 
+                 ORDER BY t.created_at DESC LIMIT 5";
+$recent_result = mysqli_query($conn, $recent_query);
 
-// NEW SAVINGS APPLICATION (by Admin)
+/* 2. DATA FOR THE MODAL (EVERYTHING) */
+$all_query = "SELECT t.*, u.FirstName, u.LastName 
+              FROM transactions t 
+              LEFT JOIN user_accounts u ON t.user_id = u.ID 
+              ORDER BY t.created_at DESC";
+$all_result = mysqli_query($conn, $all_query);
 // =======================================================
 // NEW SAVINGS APPLICATION (ADMIN) — FRONTEND SAFE
 // =======================================================

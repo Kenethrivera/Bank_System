@@ -170,58 +170,41 @@ header("Expires: 0"); // Proxies
                   </div>
                 </div>
               </div>
-              <div class="col-lg-6">
-                <div class="card p-4">
-                  <h5 class="fw-semibold mb-3">Recent Transactions</h5>
-                  <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <div class="d-flex align-items-center gap-3">
-                      <div class="bg-success bg-opacity-25 rounded p-2">
-                        <i class="bi bi-arrow-down-left text-success"></i>
-                      </div>
-                      <div>
-                        <div class="fw-medium">Deposit</div>
-                        <small class="text-muted">ACC-10234</small>
-                      </div>
-                    </div>
-                    <div class="text-end">
-                      <div class="fw-semibold text-success">+$1,500</div>
-                      <small class="text-muted">09/16/2025</small>
-                    </div>
-                  </div>
-                  <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                    <div class="d-flex align-items-center gap-3">
-                      <div class="bg-danger bg-opacity-25 rounded p-2">
-                        <i class="bi bi-arrow-up-right text-danger"></i>
-                      </div>
-                      <div>
-                        <div class="fw-medium">Withdrawal</div>
-                        <small class="text-muted">ACC-55421</small>
-                      </div>
-                    </div>
-                    <div class="text-end">
-                      <div class="fw-semibold text-danger">-$500</div>
-                      <small class="text-muted">09/15/2025</small>
-                    </div>
-                  </div>
+    <div class="col-lg-6">
+    <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-semibold mb-0">Recent Transactions</h5>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#allTransactionsModal">
+                View All
+            </button>
+        </div>
 
-                  <div class="d-flex justify-content-between align-items-center py-2">
+        <?php if (mysqli_num_rows($recent_result) > 0): ?>
+            <?php while ($trans = mysqli_fetch_assoc($recent_result)): 
+                $isPos = in_array($trans['transaction_type'], ['Cash In', 'Receive Money']);
+            ?>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                     <div class="d-flex align-items-center gap-3">
-                      <div class="bg-primary bg-opacity-25 rounded p-2">
-                        <i class="bi bi-arrow-left-right text-primary"></i>
-                      </div>
-                      <div>
-                        <div class="fw-medium">Transfer</div>
-                        <small class="text-muted">ACC-99887</small>
-                      </div>
+                        <div class="bg-<?php echo $isPos ? 'success' : 'danger'; ?> bg-opacity-25 rounded p-2">
+                            <i class="bi bi-cash"></i>
+                        </div>
+                        <div>
+                            <div class="fw-medium"><?php echo $trans['transaction_type']; ?></div>
+                            <small class="text-muted"><?php echo $trans['FirstName']; ?></small>
+                        </div>
                     </div>
                     <div class="text-end">
-                      <div class="fw-semibold text-primary">+$750</div>
-                      <small class="text-muted">09/14/2025</small>
+                        <div class="fw-bold text-<?php echo $isPos ? 'success' : 'danger'; ?>">
+                            ₱<?php echo number_format($trans['amount'], 2); ?>
+                        </div>
                     </div>
-                  </div>
-
                 </div>
-              </div>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <p class="text-muted text-center">No transactions yet.</p>
+        <?php endif; ?>
+    </div>
+</div>
 
             </div>
 
@@ -1210,6 +1193,61 @@ header("Expires: 0"); // Proxies
 
       </main>
     </div>
+    <div class="modal fade" id="allTransactionsModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalLabel">Full Transaction History</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th class="text-end">Amount</th>
+                <th>Balance After</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php 
+              // Reset pointer to the start of the results
+              mysqli_data_seek($all_result, 0); 
+              while ($row = mysqli_fetch_assoc($all_result)): 
+                $isPos = in_array($row['transaction_type'], ['Cash In', 'Receive Money']);
+              ?>
+              <tr>
+                <td class="small"><?php echo date('M d, Y H:i', strtotime($row['created_at'])); ?></td>
+                <td>
+                  <div class="fw-bold"><?php echo htmlspecialchars($row['FirstName'] . ' ' . $row['LastName']); ?></div>
+                  <small class="text-muted">ID: <?php echo $row['user_id']; ?></small>
+                </td>
+                <td>
+                  <span class="badge <?php echo $isPos ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'; ?>">
+                    <?php echo $row['transaction_type']; ?>
+                  </span>
+                </td>
+                <td class="text-muted small"><?php echo htmlspecialchars($row['description']); ?></td>
+                <td class="text-end fw-bold <?php echo $isPos ? 'text-success' : 'text-danger'; ?>">
+                  <?php echo ($isPos ? '+' : '-') . '₱' . number_format($row['amount'], 2); ?>
+                </td>
+                <td class="text-end text-muted">₱<?php echo number_format($row['balance_after'], 2); ?></td>
+              </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="script/script.js"></script>
