@@ -49,117 +49,144 @@ $conn = mysqli_connect('localhost', 'root', '', 'bank_db');
 $userId = $_SESSION['user_id'];
 
 // =============================================================
-// 4. HANDLE FORM SUBMISSIONS
+// 4. HANDLE FORM SUBMISSIONS (STRICT VALIDATION ADDED)
 // =============================================================
-$showPopup = false;     // Controls if the popup appears
-$popupMessage = "";     // The text inside the popup
-$popupType = "success"; // 'success' (Green) or 'error' (Red)
+$showPopup = false;
+$popupMessage = "";
+$popupType = "success"; // 'success' or 'error'
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // --- A. UPDATE PERSONAL DETAILS & PROFILE PICTURE ---
     if (isset($_POST['update_profile'])) {
-        $phone = mysqli_real_escape_string($conn, $_POST['phone']);
-        $addr  = mysqli_real_escape_string($conn, $_POST['address']);
+        $phone = trim($_POST['phone']);
+        $addr  = mysqli_real_escape_string($conn, trim($_POST['address']));
         
-        // Image Upload Logic
-        $imageSql = ""; 
-        $uploadOk = true;
+        // 1. STRICT PHONE VALIDATION
+        // Allow only "09xxxxxxxxx" (11 digits) OR "+639xxxxxxxxx" (13 characters)
+        if (!preg_match('/^(09|\+639)\d{9}$/', $phone)) {
+            $popupMessage = "Invalid Phone Number. Must start with 09 (11 digits) or +639.";
+            $popupType = "error";
+            $showPopup = true;
+        } 
+        else {
+            // Phone is valid, proceed with Image Upload & Database Update
+            $imageSql = ""; 
+            $uploadOk = true;
 
-        if (isset($_FILES['profile_img']) && $_FILES['profile_img']['error'] === 0) {
-            $fileName = $_FILES['profile_img']['name'];
-            $fileTmp  = $_FILES['profile_img']['tmp_name'];
-            $fileExt  = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-            $allowed  = ['jpg', 'jpeg', 'png'];
+            if (isset($_FILES['profile_img']) && $_FILES['profile_img']['error'] === 0) {
+                $fileName = $_FILES['profile_img']['name'];
+                $fileTmp  = $_FILES['profile_img']['tmp_name'];
+                $fileExt  = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                $allowed  = ['jpg', 'jpeg', 'png'];
 
-            if (in_array($fileExt, $allowed)) {
-                $newFileName = uniqid('img_') . "." . $fileExt;
-                $uploadPath = "../profile/" . $newFileName; 
-                $dbPath     = "profile/" . $newFileName; 
+                if (in_array($fileExt, $allowed)) {
+                    $newFileName = uniqid('img_') . "." . $fileExt;
+                    $uploadPath = "../profile/" . $newFileName; 
+                    $dbPath     = "profile/" . $newFileName; 
 
-                if (move_uploaded_file($fileTmp, $uploadPath)) {
-                    $imageSql = ", Img='$dbPath'";
+                    if (move_uploaded_file($fileTmp, $uploadPath)) {
+                        $imageSql = ", Img='$dbPath'";
+                    } else {
+                        $popupMessage = "Failed to upload image.";
+                        $popupType = "error";
+                        $uploadOk = false;
+                        $showPopup = true;
+                    }
                 } else {
-                    $popupMessage = "Failed to upload image.";
+                    $popupMessage = "Invalid file type. Only JPG, JPEG, & PNG allowed.";
                     $popupType = "error";
                     $uploadOk = false;
                     $showPopup = true;
                 }
-            } else {
-                $popupMessage = "Invalid file type. Only JPG, JPEG, & PNG allowed.";
-                $popupType = "error";
-                $uploadOk = false;
-                $showPopup = true;
             }
-        }
 
-        if ($uploadOk) {
-            $sql = "UPDATE user_accounts SET Phone='$phone', Address='$addr' $imageSql WHERE ID='$userId'";
-            
-            if (mysqli_query($conn, $sql)) {
-                $popupMessage = "Profile details updated successfully!";
-                $popupType = "success";
-                $showPopup = true;
+            if ($uploadOk) {
+                $sql = "UPDATE user_accounts SET Phone='$phone', Address='$addr' $imageSql WHERE ID='$userId'";
                 
-                // Refresh data
-                $user['Phone'] = $phone;
-                $user['Address'] = $addr;
-                if ($imageSql !== "") $userImg = "../" . $dbPath;
-            } else {
-                $popupMessage = "Database error: " . mysqli_error($conn);
-                $popupType = "error";
-                $showPopup = true;
+                if (mysqli_query($conn, $sql)) {
+                    $popupMessage = "Profile details updated successfully!";
+                    $popupType = "success";
+                    $showPopup = true;
+                    
+                    // Refresh data
+                    $user['Phone'] = $phone;
+                    $user['Address'] = $addr;
+                    if ($imageSql !== "") $userImg = "../" . $dbPath;
+                } else {
+                    $popupMessage = "Database error: " . mysqli_error($conn);
+                    $popupType = "error";
+                    $showPopup = true;
+                }
             }
         }
     }
 
     // --- B. UPDATE USERNAME (EMAIL) ---
     if (isset($_POST['update_username'])) {
-        $newEmail = mysqli_real_escape_string($conn, $_POST['new_email']);
+        $newEmail = trim($_POST['new_email']);
         $passwordVerify = $_POST['confirm_password'];
 
-        $check = mysqli_query($conn, "SELECT Password FROM user_accounts WHERE ID='$userId'");
-        $row = mysqli_fetch_assoc($check);
-        
-        if ($row['Password'] === $passwordVerify) {
-            $dupCheck = mysqli_query($conn, "SELECT ID FROM user_accounts WHERE Email='$newEmail' AND ID != '$userId'");
-            if (mysqli_num_rows($dupCheck) > 0) {
-                $popupMessage = "Email already in use by another account.";
-                $popupType = "error";
-                $showPopup = true;
-            } else {
-                $sql = "UPDATE user_accounts SET Email='$newEmail' WHERE ID='$userId'";
-                if (mysqli_query($conn, $sql)) {
-                    $_SESSION['email'] = $newEmail;
-                    $popupMessage = "Username updated successfully!";
-                    $popupType = "success";
-                    $showPopup = true;
-                    $userEmail = $newEmail; 
-                } else {
-                    $popupMessage = "Error updating email.";
-                    $popupType = "error";
-                    $showPopup = true;
-                }
-            }
-        } else {
-            $popupMessage = "Incorrect password confirmation.";
+        // 1. STRICT EMAIL VALIDATION
+        if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+            $popupMessage = "Invalid Email Format. (e.g., user@example.com)";
             $popupType = "error";
             $showPopup = true;
         }
+        else {
+            // Verify Password
+            $check = mysqli_query($conn, "SELECT Password FROM user_accounts WHERE ID='$userId'");
+            $row = mysqli_fetch_assoc($check);
+            
+            if ($row['Password'] === $passwordVerify) {
+                // Check if email is taken
+                $dupCheck = mysqli_query($conn, "SELECT ID FROM user_accounts WHERE Email='$newEmail' AND ID != '$userId'");
+                if (mysqli_num_rows($dupCheck) > 0) {
+                    $popupMessage = "Email already in use by another account.";
+                    $popupType = "error";
+                    $showPopup = true;
+                } else {
+                    $sql = "UPDATE user_accounts SET Email='$newEmail' WHERE ID='$userId'";
+                    if (mysqli_query($conn, $sql)) {
+                        $_SESSION['email'] = $newEmail;
+                        $popupMessage = "Username updated successfully!";
+                        $popupType = "success";
+                        $showPopup = true;
+                        $userEmail = $newEmail; 
+                    } else {
+                        $popupMessage = "Error updating email.";
+                        $popupType = "error";
+                        $showPopup = true;
+                    }
+                }
+            } else {
+                $popupMessage = "Incorrect password confirmation.";
+                $popupType = "error";
+                $showPopup = true;
+            }
+        }
     }
 
-    // --- C. UPDATE PASSWORD (ERROR CATCH ADDED HERE) ---
+    // --- C. UPDATE PASSWORD ---
     if (isset($_POST['update_password'])) {
         $currentPass = $_POST['current_password'];
         $newPass     = $_POST['new_password'];
         $confirmPass = $_POST['confirm_new_password'];
 
-        // Verify current password
+        // 1. Verify Current Password
         $check = mysqli_query($conn, "SELECT Password FROM user_accounts WHERE ID='$userId'");
         $row = mysqli_fetch_assoc($check);
 
         if ($row['Password'] === $currentPass) {
-            if ($newPass === $confirmPass) {
+            
+            // 2. CHECK: Is New Password DIFFERENT from Old Password?
+            if ($currentPass === $newPass) {
+                $popupMessage = "New password cannot be the same as your old password.";
+                $popupType = "error";
+                $showPopup = true;
+            } 
+            // 3. CHECK: Do New Passwords Match?
+            elseif ($newPass === $confirmPass) {
                 // Update to new password
                 $updatePassSql = "UPDATE user_accounts SET Password='$newPass' WHERE ID='$userId'";
                 if (mysqli_query($conn, $updatePassSql)) {
@@ -172,13 +199,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $showPopup = true;
                 }
             } else {
-                // ERROR CATCH: Passwords do not match
                 $popupMessage = "New password and Confirm password do not match.";
                 $popupType = "error";
                 $showPopup = true;
             }
         } else {
-            // ERROR CATCH: Current password wrong
             $popupMessage = "Your current password is incorrect.";
             $popupType = "error";
             $showPopup = true;
@@ -933,7 +958,7 @@ require_once 'php/users_loans_backend.php';
                     
                     <ul class="nav nav-tabs mb-3" id="securityTabs" role="tablist">
                         <li class="nav-item">
-                            <button class="nav-link active" id="username-tab" data-bs-toggle="tab" data-bs-target="#username-pane" type="button">Change Username</button>
+                            <button class="nav-link active" id="username-tab" data-bs-toggle="tab" data-bs-target="#username-pane" type="button">Change Email</button>
                         </li>
                         <li class="nav-item">
                             <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password-pane" type="button">Change Password</button>
@@ -955,7 +980,7 @@ require_once 'php/users_loans_backend.php';
                                     <label class="form-label">Confirm with Password</label>
                                     <input type="password" name="confirm_password" class="form-control" required placeholder="Enter current password">
                                 </div>
-                                <button type="submit" name="update_username" class="btn btn-primary w-100">Update Username</button>
+                                <button type="submit" name="update_username" class="btn btn-primary w-100">Update Email</button>
                             </form>
                         </div>
 
