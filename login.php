@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bank Login</title>
+  <title>BYD Bank Login</title>
   <link rel="stylesheet" href="css/login.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
@@ -19,7 +19,7 @@
           <div class="logo-circle mx-auto">
             <i class="bi bi-building text-white fs-2"></i>
           </div>
-          <h1 class="h3 fw-bold text-dark">BangisBank</h1>
+          <h1 class="h3 fw-bold text-dark">BYD Bank</h1>
           <p class="text-muted mb-0">Sign in to your account</p>
         </div><?php 
 if (isset($_GET['error'])) {

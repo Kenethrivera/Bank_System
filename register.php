@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Register | BangisBank</title>
+  <title>Register | BYD Bank</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="css/register.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -18,7 +18,7 @@
           <div class="mb-4 fs-3">
             <i class="bi bi-building"></i>
           </div>
-          <h4>Join BangisBank</h4>
+          <h4>Join BYD Bank</h4>
           <p class="small text-light">
             Start your journey with the most trusted financial partner.
           </p>
@@ -99,6 +99,6 @@
     </div>
   </div>
 </div>
-<script src="script/register copy.js"></script>
+<script src="script/register copy 2.js"></script>
 </body>
 </html>

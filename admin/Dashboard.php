@@ -28,7 +28,7 @@ header("Expires: 0"); // Proxies
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
-  <title>Bank Dashboard</title>
+  <title>BYD Bank Dashboard</title>
 </head>
 
 <body>
@@ -38,7 +38,7 @@ header("Expires: 0"); // Proxies
         <div class="sidebar-logo">
           <span class="material-symbols-outlined fs-2">account_balance</span>
           <div class="logo-text">
-            <h5 class="mb-0">KennethBank</h5>
+            <h5 class="mb-0">BYD Bank</h5>
             <small>Management&nbsp;System</small>
           </div>
         </div>
@@ -142,8 +142,8 @@ header("Expires: 0"); // Proxies
                       <i class="bi bi-arrow-left-right fs-4"></i>
                     </div>
                   </div>
-                  <small class="text-muted">Transactions Today</small>
-                  <h3 class="fw-bold">32</h3>
+                  <small class="text-muted">Total Transaction</small>
+                  <h3 class="fw-bold"><?php echo $totalTransaction; ?></h3>
                 </div>
               </div>
               <div class="col-md-6 col-lg-3">
@@ -168,15 +168,6 @@ header("Expires: 0"); // Proxies
       <span class="fs-4 fw-bold">₱<?php echo number_format($totalBalance, 2); ?></span>
     </div>
     
-    <div class="progress mb-4" style="height:8px;">
-      <div class="progress-bar bg-success" 
-           role="progressbar" 
-           style="width: <?php echo $progressPercent; ?>%" 
-           aria-valuenow="<?php echo $progressPercent; ?>" 
-           aria-valuemin="0" 
-           aria-valuemax="100">
-      </div>
-    </div>
 
     <div class="row border-top pt-3">
       <div class="col">
@@ -201,7 +192,7 @@ header("Expires: 0"); // Proxies
 
         <?php if (mysqli_num_rows($recent_result) > 0): ?>
             <?php while ($trans = mysqli_fetch_assoc($recent_result)): 
-                $isPos = in_array($trans['transaction_type'], ['Cash In', 'Receive Money']);
+                $isPos = in_array($trans['transaction_type'], ['Cash In', 'Received Money' ]);
             ?>
                 <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                     <div class="d-flex align-items-center gap-3">
@@ -547,7 +538,7 @@ if (mysqli_num_rows($accounts_result) > 0) {
               <?php while ($row = mysqli_fetch_assoc($manage_trans_result)): 
                 // Logic for visual styling
                 $type = $row['transaction_type'];
-                $isPositive = in_array($type, ['Cash In', 'Receive Money', 'Deposit']);
+                $isPositive = in_array($type, ['Cash In', 'Received Money', 'Deposit']);
                 
                 $badgeClass = $isPositive ? 'bg-success' : 'bg-danger';
                 if ($type == 'Send Money' || $type == 'Transfer') $badgeClass = 'bg-primary';
@@ -1619,7 +1610,7 @@ if (mysqli_num_rows($accounts_result) > 0) {
               // Reset pointer to the start of the results
               mysqli_data_seek($all_result, 0); 
               while ($row = mysqli_fetch_assoc($all_result)): 
-                $isPos = in_array($row['transaction_type'], ['Cash In', 'Receive Money']);
+                $isPos = in_array($row['transaction_type'], ['Cash In', 'Received Money']);
               ?>
               <tr>
                 <td class="small"><?php echo date('M d, Y H:i', strtotime($row['created_at'])); ?></td>

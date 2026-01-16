@@ -1,5 +1,51 @@
 <?php
+// 1. SESSION AND HEADER INITIALIZATION
+session_start();
 
+// PREVENT BROWSER CACHING (Fixes the Back Button Issue)
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
+// 2. LOGOUT LOGIC (Destroys Session + Cookies)
+if (isset($_GET['logout'])) {
+    $_SESSION = [];
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+    session_destroy();
+    header("Location: ../login.php");
+    exit;
+}
+
+// 3. DATABASE CONNECTION
+$conn = mysqli_connect('localhost', 'root', '', 'bank_db');
+if (!$conn) { 
+    die("Connection failed: " . mysqli_connect_error()); 
+}
+
+// 4. SECURITY CHECK (Login & Status Gatekeeper)
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login.php");
+    exit;
+}
+
+$userId = $_SESSION['user_id'];
+
+// Fetch user status and data immediately
+$user_query = mysqli_query($conn, "SELECT * FROM user_accounts WHERE ID='$userId'");
+$user = mysqli_fetch_assoc($user_query);
+
+if (!$user || $user['Status'] !== 'Approved') {
+    header("Location: account_status.php");
+    exit;
+}
+
+// 5. SESSION MESSAGE HANDLING (Cashout Alerts)
 $cashoutSuccessMessage = '';
 $cashoutErrorMessage = '';
 
@@ -7,55 +53,214 @@ if (isset($_SESSION['cashout_success'])) {
     $cashoutSuccessMessage = $_SESSION['cashout_success'];
     unset($_SESSION['cashout_success']);
 }
-
 if (isset($_SESSION['cashout_error'])) {
     $cashoutErrorMessage = $_SESSION['cashout_error'];
     unset($_SESSION['cashout_error']);
 }
+$sendMoneySuccessMessage = '';
+$sendMoneyErrorMessage = '';
 
-session_start();
-
-// 1. Establish the database connection first
-// Make sure these credentials match your database
-$conn = mysqli_connect('localhost', 'root', '', 'bank_db');
-
-if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
+//Send Money
+if (isset($_SESSION['send_money_success'])) {
+    $sendMoneySuccessMessage = $_SESSION['send_money_success'];
+    unset($_SESSION['send_money_success']);
 }
 
-// 2. Security Check: Is the user logged in?
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../login.php");
-    exit;
+
+if (isset($_SESSION['send_money_error'])) {
+    $sendMoneyErrorMessage = $_SESSION['send_money_error'];
+    unset($_SESSION['send_money_error']);
 }
 
-// 3. Status Gatekeeper: Prevent unapproved access
-$userId = $_SESSION['user_id'];
-$check = mysqli_query($conn, "SELECT Status FROM user_accounts WHERE ID = '$userId'");
+// 6. HANDLE FORM SUBMISSIONS (Profile & Security)
+$showPopup = false;
+$popupMessage = "";
+$popupType = "success";
 
-// Error handling if query fails
-if (!$check) {
-    die("Query Error: " . mysqli_error($conn));
+// =============================================================
+// 4. HANDLE FORM SUBMISSIONS (STRICT VALIDATION ADDED)
+// =============================================================
+$showPopup = false;
+$popupMessage = "";
+$popupType = "success"; // 'success' or 'error'
+
+//==============================================
+// 4. HANDLE FORM SUBMISSIONS (STRICT VALIDATION + SAME PASSWORD CHECK)
+// =============================================================
+$showPopup = false;
+$popupMessage = "";
+$popupType = "success"; // 'success' or 'error'
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+    // --- A. UPDATE PERSONAL DETAILS ---
+    if (isset($_POST['update_profile'])) {
+        $phone = trim($_POST['phone']);
+        $addr  = mysqli_real_escape_string($conn, trim($_POST['address']));
+        
+        // 1. STRICT PHONE VALIDATION (09xxxxxxxxx or +639xxxxxxxxx)
+        if (!preg_match('/^09[0-9]{9}$/', $phone)) {
+            $popupMessage = "Invalid Phone Number. Must start with 09 (11 digits).";
+            $popupType = "error";
+            $showPopup = true;
+        } 
+        else {
+            $imageSql = ""; 
+            $uploadOk = true;
+
+            if (isset($_FILES['profile_img']) && $_FILES['profile_img']['error'] === 0) {
+                $fileName = $_FILES['profile_img']['name'];
+                $fileTmp  = $_FILES['profile_img']['tmp_name'];
+                $fileExt  = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+                $allowed  = ['jpg', 'jpeg', 'png'];
+
+                if (in_array($fileExt, $allowed)) {
+                    $newFileName = uniqid('img_') . "." . $fileExt;
+                    $uploadPath = "../profile/" . $newFileName; 
+                    $dbPath     = "profile/" . $newFileName; 
+
+                    if (move_uploaded_file($fileTmp, $uploadPath)) {
+                        $imageSql = ", Img='$dbPath'";
+                    } else {
+                        $popupMessage = "Failed to upload image.";
+                        $popupType = "error";
+                        $uploadOk = false;
+                        $showPopup = true;
+                    }
+                } else {
+                    $popupMessage = "Invalid file type. Only JPG, JPEG, & PNG allowed.";
+                    $popupType = "error";
+                    $uploadOk = false;
+                    $showPopup = true;
+                }
+            }
+
+            if ($uploadOk) {
+                $sql = "UPDATE user_accounts SET Phone='$phone', Address='$addr' $imageSql WHERE ID='$userId'";
+                if (mysqli_query($conn, $sql)) {
+                    $popupMessage = "Profile details updated successfully!";
+                    $popupType = "success";
+                    $showPopup = true;
+                    // Refresh data
+                    $user['Phone'] = $phone;
+                    $user['Address'] = $addr;
+                    if ($imageSql !== "") $userImg = "../" . $dbPath;
+                } else {
+                    $popupMessage = "Database error: " . mysqli_error($conn);
+                    $popupType = "error";
+                    $showPopup = true;
+                }
+            }
+        }
+    }
+
+    // --- B. UPDATE USERNAME (EMAIL) ---
+    if (isset($_POST['update_username'])) {
+        $newEmail = trim($_POST['new_email']);
+        $passwordVerify = $_POST['confirm_password'];
+
+        if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+            $popupMessage = "Invalid Email Format. (e.g., user@example.com)";
+            $popupType = "error";
+            $showPopup = true;
+        }
+        else {
+            $check = mysqli_query($conn, "SELECT Password FROM user_accounts WHERE ID='$userId'");
+            $row = mysqli_fetch_assoc($check);
+            
+            if ($row['Password'] === $passwordVerify) {
+                $dupCheck = mysqli_query($conn, "SELECT ID FROM user_accounts WHERE Email='$newEmail' AND ID != '$userId'");
+                if (mysqli_num_rows($dupCheck) > 0) {
+                    $popupMessage = "Email already in use by another account.";
+                    $popupType = "error";
+                    $showPopup = true;
+                } else {
+                    $sql = "UPDATE user_accounts SET Email='$newEmail' WHERE ID='$userId'";
+                    if (mysqli_query($conn, $sql)) {
+                        $_SESSION['email'] = $newEmail;
+                        $popupMessage = "Username updated successfully!";
+                        $popupType = "success";
+                        $showPopup = true;
+                        $userEmail = $newEmail; 
+                    } else {
+                        $popupMessage = "Error updating email.";
+                        $popupType = "error";
+                        $showPopup = true;
+                    }
+                }
+            } else {
+                $popupMessage = "Incorrect password confirmation.";
+                $popupType = "error";
+                $showPopup = true;
+            }
+        }
+    }
+
+    // --- C. UPDATE PASSWORD (CORRECTED) ---
+    if (isset($_POST['update_password'])) {
+        $currentPass = $_POST['current_password'];
+        $newPass     = $_POST['new_password'];
+        $confirmPass = $_POST['confirm_new_password'];
+
+        // 1. Verify Current Password
+        $check = mysqli_query($conn, "SELECT Password FROM user_accounts WHERE ID='$userId'");
+        $row = mysqli_fetch_assoc($check);
+
+        if ($row['Password'] === $currentPass) {
+            
+            // 2. CHECK: Is New Password DIFFERENT from Old Password?
+            if ($currentPass === $newPass) {
+                $popupMessage = "New password cannot be the same as your old password.";
+                $popupType = "error";
+                $showPopup = true;
+            } 
+            // 3. CHECK: Do New Passwords Match?
+            elseif ($newPass === $confirmPass) {
+                // Update to new password
+                $updatePassSql = "UPDATE user_accounts SET Password='$newPass' WHERE ID='$userId'";
+                if (mysqli_query($conn, $updatePassSql)) {
+                    $popupMessage = "Password updated successfully!";
+                    $popupType = "success";
+                    $showPopup = true;
+                } else {
+                    $popupMessage = "Database error updating password.";
+                    $popupType = "error";
+                    $showPopup = true;
+                }
+            } else {
+                $popupMessage = "New password and Confirm password do not match.";
+                $popupType = "error";
+                $showPopup = true;
+            }
+        } else {
+            $popupMessage = "Your current password is incorrect.";
+            $popupType = "error";
+            $showPopup = true;
+        }
+    }
 }
 
-$userData = mysqli_fetch_assoc($check);
 
-// If the account isn't approved, send them back to the status page
-if ($userData['Status'] !== 'Approved') {
-    header("Location: account_status.php");
-    exit;
-}
+$userName = htmlspecialchars($user['FirstName'] ?? '');
+$userFullName = htmlspecialchars(($user['FirstName'] ?? '') . ' ' . ($user['LastName'] ?? ''));
+$userEmail = htmlspecialchars($user['Email'] ?? '');
+$userPhone = htmlspecialchars($user['Phone'] ?? '');
+$userImg = !empty($user['Img']) ? "../" . $user['Img'] : "../profile/default.jpg";
+$mainAccountNumber = "ACC-" . str_pad($userId, 8, '0', STR_PAD_LEFT); 
+$totalBalance = $user['Balance'] ?? 0;
 
-// 4. Load your back-end logic files
-// (These will now inherit the $conn variable and $userId)
-$userId = $_SESSION['user_id'];  
+$conn_check = mysqli_connect('localhost', 'root', '', 'bank_db');
+$uid_check = $_SESSION['user_id'];
+$status_query = mysqli_query($conn_check, "SELECT Status FROM user_accounts WHERE ID='$uid_check'");
+$status_row = mysqli_fetch_assoc($status_query);
+// 8. LOAD REMAINING MODULES
 include 'php/back_end.php';
 require_once 'php/users_loans_backend.php';
 ?>
 <!Doctype html>
 
 <head>
-    <title>Banko User Dashboard</title>
+    <title>BYD Bank User Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -68,12 +273,11 @@ require_once 'php/users_loans_backend.php';
  <!-- HEADER NAVIGATION BAR -->
 
     <nav class="navbar navbar-expand-lg sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2" href="#">
-                <i class="bi bi-bank fs-3"></i> Banko
-            </a>
-
-            <div class="d-flex justify-content-center flex-grow-1">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4 d-flex align-items-center gap-2" href="#">
+            <i class="bi bi-bank fs-3"></i> BYD Bank
+        </a>
+ <div class="d-flex justify-content-center flex-grow-1">
                 <a class="nav-link active" onclick="showSection('home', this)">
                     <i class="bi bi-house me-1"></i> Home
                 </a>
@@ -84,51 +288,43 @@ require_once 'php/users_loans_backend.php';
                     <i class="bi bi-cash-stack me-1"></i> Loan
                 </a>
             </div>
-
-            <div class="d-flex align-items-center">
-                <i class="bi bi-question-circle me-3 fs-5 text-secondary cursor-pointer" data-bs-toggle="modal"
-                    data-bs-target="#faqModal" title="Help"></i>
-
-                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center cursor-pointer"
-                    style="width: 40px; height: 40px;" data-bs-toggle="dropdown">
-                    <i class="bi bi-person-fill"></i>
+        <div class="d-flex align-items-center">
+            <i class="bi bi-question-circle me-3 fs-5 text-secondary cursor-pointer" 
+               data-bs-toggle="modal" data-bs-target="#faqModal" title="Help"></i>
+            
+            <div class="dropdown">
+                <div class="cursor-pointer" data-bs-toggle="dropdown">
+                    <img src="<?php echo $userImg; ?>" alt="Profile" 
+                         style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 </div>
+                
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-2" style="min-width: 220px;">
+                    <li><h6 class="dropdown-header">Hello, <?php echo $userName; ?></h6></li>
+                    <li><hr class="dropdown-divider"></li>
+                    
+                    <li>
+                        <a class="dropdown-item rounded-2 py-2" href="#" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                            <i class="bi bi-person-vcard me-2"></i>Edit Personal Details
+                        </a>
+                    </li>
+                    
+                    <li>
+                        <a class="dropdown-item rounded-2 py-2" href="#" data-bs-toggle="modal" data-bs-target="#securityModal">
+                            <i class="bi bi-shield-lock me-2"></i>Account Security
+                        </a>
+                    </li>
 
-                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-2">
+                    <li><hr class="dropdown-divider"></li>
                     <li>
-                        <h6 class="dropdown-header">Hello, <?php echo $userName; ?></h6>
-                    </li>
-                    <li>
-                        <a class="dropdown-item rounded-2" href="#" data-bs-toggle="modal"
-                            data-bs-target="#accountsModal">
-                            <i class="bi bi-wallet2 me-2"></i>Active Accounts & Loans
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item rounded-2" href="#" data-bs-toggle="modal"
-                            data-bs-target="#usernameModal">
-                            <i class="bi bi-person-gear me-2"></i>Change Username
-                        </a>
-                    </li>
-                    <li>
-                        <a class="dropdown-item rounded-2" href="#" data-bs-toggle="modal"
-                            data-bs-target="#passwordModal">
-                            <i class="bi bi-key me-2"></i>Change Password
-                        </a>
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
-                    <li>
-                        <a class="dropdown-item text-danger rounded-2" href="php/logout.php">
+                        <a class="dropdown-item text-danger rounded-2 py-2" href="?logout=true">
                             <i class="bi bi-box-arrow-right me-2"></i>Logout
                         </a>
                     </li>
                 </ul>
             </div>
         </div>
-    </nav>
-
+    </div>
+</nav>
 <!-- Main dashboard content -->
     <div class="container py-5">
 
@@ -554,6 +750,7 @@ require_once 'php/users_loans_backend.php';
                     </div>
                 </div>
                 <!-- SEND MONEY MODAL -->
+                <!-- SEND MONEY MODAL -->
                 <div class="modal fade" id="sendMoneyModal" tabindex="-1">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content rounded-4 shadow-lg border-0">
@@ -564,6 +761,8 @@ require_once 'php/users_loans_backend.php';
                             </div>
 
 
+
+
                             <div class="modal-body p-4">
                                 <div class="mb-3 text-center">
                                     <p class="mb-1 small text-muted">Available Balance</p>
@@ -571,7 +770,9 @@ require_once 'php/users_loans_backend.php';
                                         ₱<?php echo number_format($totalBalance, 2); ?></h4>
                                 </div>
 
+
                                 <p class="text-danger text-center" id="sendMoneyWarning" style="display:none;"></p>
+
 
                                 <form id="sendMoneyForm" method="POST" action="php/send_money.php">
                                     <div class="mb-3">
@@ -581,11 +782,13 @@ require_once 'php/users_loans_backend.php';
                                             name="recipient_number" placeholder="09XXXXXXXXX" required>
                                     </div>
 
+
                                     <div class="mb-3">
                                         <label for="sendAmount" class="form-label fw-semibold">Amount</label>
                                         <input type="number" min="1" step="0.01" class="form-control form-control-lg"
                                             id="sendAmount" name="amount" placeholder="0.00" required>
                                     </div>
+
 
                                     <button type="button" class="btn btn-purple w-100 py-2 fw-semibold"
                                         id="sendMoneyNext">
@@ -596,6 +799,69 @@ require_once 'php/users_loans_backend.php';
                         </div>
                     </div>
                 </div>
+                <!-- Send Money Success Modal -->
+                <div class="modal fade" id="sendMoneySuccessModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-body text-center p-4">
+                                <div class="mb-3">
+                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2">Money Sent Successfully!</h5>
+                                <p class="mb-0" id="sendMoneySuccessMessage"></p>
+                            </div>
+                            <div class="modal-footer border-0 justify-content-center">
+                                <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Send Money Error Modal -->
+                <div class="modal fade" id="sendMoneyErrorModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-body text-center p-4">
+                                <div class="mb-3">
+                                    <i class="bi bi-x-circle-fill text-danger" style="font-size: 4rem;"></i>
+                                </div>
+                                <h5 class="fw-bold mb-2">Transfer Failed</h5>
+                                <p class="mb-0" id="sendMoneyErrorMessage"></p>
+                            </div>
+                            <div class="modal-footer border-0 justify-content-center">
+                                <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- CONFIRMATION MODAL -->
+                <div class="modal fade" id="sendMoneyConfirmModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content rounded-4 shadow-lg border-0">
+                            <div class="modal-header bg-purple text-white rounded-top-4">
+                                <h5 class="modal-title">Confirm Send Money</h5>
+                                <button type="button" class="btn-close btn-close-white"
+                                    data-bs-dismiss="modal"></button>
+                            </div>
+
+
+                            <div class="modal-body p-4 text-center">
+                                <p class="mb-4">
+                                    Send <span class="fw-bold" id="confirmSendAmount"></span> to <span class="fw-bold"
+                                        id="confirmRecipient"></span>?
+                                </p>
+                                <button type="submit" form="sendMoneyForm"
+                                    class="btn btn-purple w-100 py-2 fw-semibold">
+                                    Confirm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
 
                 <!-- CONFIRMATION MODAL -->
                 <div class="modal fade" id="sendMoneyConfirmModal" tabindex="-1">
@@ -1496,6 +1762,141 @@ require_once 'php/users_loans_backend.php';
         </div>
     </div>
 
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Personal Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    
+                    <form method="POST" enctype="multipart/form-data" onsubmit="return confirm('Are you sure you want to save these changes?');">
+                        
+                        <div class="text-center mb-4">
+                            <div class="position-relative d-inline-block">
+                                <img src="<?php echo $userImg; ?>" id="profilePreview" 
+                                    class="rounded-circle border border-3 border-white shadow" 
+                                    style="width: 120px; height: 120px; object-fit: cover;">
+                                
+                                <label for="profileUpload" 
+                                    class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 cursor-pointer shadow-sm hover-shadow" 
+                                    style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                    title="Change Profile Picture">
+                                    <i class="bi bi-camera-fill"></i>
+                                </label>
+                            </div>
+                            <input type="file" name="profile_img" id="profileUpload" class="d-none" accept="image/*" onchange="previewImage(this)">
+                        </div>
+
+                        <div class="alert alert-warning border-warning d-flex align-items-center mb-4">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <small>Identity details (Name, Birthday) are fixed. Please visit a branch to update them.</small>
+                        </div>
+
+                        <h6 class="fw-bold text-muted mb-3">Identity Information (Fixed)</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">First Name</label>
+                                <input type="text" class="form-control bg-light" value="<?php echo htmlspecialchars($user['FirstName'] ?? ''); ?>" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Middle Name</label>
+                                <input type="text" class="form-control bg-light" value="<?php echo htmlspecialchars($user['MiddleName'] ?? ''); ?>" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-control bg-light" value="<?php echo htmlspecialchars($user['LastName'] ?? ''); ?>" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Birthdate</label>
+                                <input type="text" class="form-control bg-light" value="<?php echo htmlspecialchars($user['Birthdate'] ?? ''); ?>" readonly>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold text-muted mb-3">Contact Information (Editable)</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Phone Number <i class="bi bi-pencil-square ms-1 text-primary"></i></label>
+                                <input type="text" minlength="11" maxlength="13" name="phone" class="form-control border-primary" value="<?php echo htmlspecialchars($user['Phone'] ?? ''); ?>" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Address <i class="bi bi-pencil-square ms-1 text-primary"></i></label>
+                                <input type="text" name="address" class="form-control border-primary" value="<?php echo htmlspecialchars($user['Address'] ?? ''); ?>" required>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" name="update_profile" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="securityModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Account Security</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    
+                    <ul class="nav nav-tabs mb-3" id="securityTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="username-tab" data-bs-toggle="tab" data-bs-target="#username-pane" type="button">Change Email</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password-pane" type="button">Change Password</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="username-pane">
+                            <form method="POST" onsubmit="return confirm('Are you sure you want to update your username?');">
+                                <div class="mb-3">
+                                    <label class="form-label">Current Email</label>
+                                    <input type="text" class="form-control" value="<?php echo $userEmail; ?>" disabled>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">New Email Address</label>
+                                    <input type="email" name="new_email" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Confirm with Password</label>
+                                    <input type="password" name="confirm_password" class="form-control" required placeholder="Enter current password">
+                                </div>
+                                <button type="submit" name="update_username" class="btn btn-primary w-100">Update Email</button>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="password-pane">
+                            <form method="POST" onsubmit="return confirm('Are you sure you want to update your password?');">
+                                <div class="mb-3">
+                                    <label class="form-label">Current Password</label>
+                                    <input type="password" name="current_password" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" name="new_password" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Confirm New Password</label>
+                                    <input type="password" name="confirm_new_password" class="form-control" required>
+                                </div>
+                                <button type="submit" name="update_password" class="btn btn-primary w-100">Update Password</button>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 
     <!-- 
 // ==========================================
@@ -1554,7 +1955,7 @@ require_once 'php/users_loans_backend.php';
                         </div>
                     </div>
                     <div class="mt-3 text-center">
-                        <small class="text-muted">Need more help? Call us at 1-800-BANKO-HELP</small>
+                        <small class="text-muted">Need more help? Call us at 1-800-BYD-BANK-HELP</small>
                     </div>
                 </div>
             </div>
@@ -1577,6 +1978,65 @@ require_once 'php/users_loans_backend.php';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="script/script.js"></script>
     <script src="script/loan_payment.js"></script>
+    <div class="modal fade" id="statusPopupModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center p-3">
+            <div class="modal-body">
+                <div class="mb-2">
+                    <?php if ($popupType === 'success'): ?>
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mt-2">Success!</h5>
+                    <?php else: ?>
+                        <i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i>
+                        <h5 class="fw-bold mt-2">Error</h5>
+                    <?php endif; ?>
+                </div>
+                
+                <p id="statusPopupMessage" class="mb-0 text-muted">
+                    <?php echo $popupMessage; ?>
+                </p>
+
+                <button type="button" class="btn <?php echo ($popupType === 'success') ? 'btn-success' : 'btn-danger'; ?> w-100 mt-3 rounded-pill" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    <?php if ($sendMoneySuccessMessage): ?>
+            document.getElementById('sendMoneySuccessMessage').textContent = '<?php echo addslashes($sendMoneySuccessMessage); ?>';
+            const sendSuccessModal = new bootstrap.Modal(document.getElementById('sendMoneySuccessModal'));
+            sendSuccessModal.show();
+    <?php endif; ?>
+       
+        <?php if ($sendMoneyErrorMessage): ?>
+            document.getElementById('sendMoneyErrorMessage').textContent = '
+            <?php echo addslashes($sendMoneyErrorMessage); ?>';
+            const sendErrorModal = new bootstrap.Modal(document.getElementById('sendMoneyErrorModal'));
+            sendErrorModal.show();
+        <?php endif; ?>
+        });
+        </script>
+<script>
+    // Preview Image Script
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('profilePreview').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Trigger Popup if PHP says so (Check $showPopup instead of $successPopup)
+    document.addEventListener('DOMContentLoaded', function() {
+        <?php if ($showPopup): ?>
+            var myModal = new bootstrap.Modal(document.getElementById('statusPopupModal'));
+            myModal.show();
+        <?php endif; ?>
+    });
+</script>
 
 </body>
 

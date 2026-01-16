@@ -187,9 +187,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // DASHBOARD DATA
 /* Count customers */
-$total_customers_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts Where Role='User'");
+$total_customers_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts Where Role='User' AND Status='Approved'");
 $row = mysqli_fetch_assoc($total_customers_result);
 $totalCustomers = $row['total'];
+
+$total_transaction = mysqli_query($conn, "SELECT COUNT(*) AS total FROM transactions");
+$row = mysqli_fetch_assoc($total_transaction);
+$totalTransaction = $row['total'];
 
 /* Pending Accounts */
 $pending_acc = mysqli_query($conn, "SELECT COUNT(*) AS total FROM user_accounts Where Status='Pending'");
@@ -326,12 +330,12 @@ if (isset($_POST['confirm_deposit'])) {
             echo "<script>alert('Error updating balance: " . mysqli_error($conn) . "');</script>";
         }
     }
+    header ("Location: " . $_SERVER['PHP_SELF'] . "#accounts");
+    exit();
 }
 
 // ============================================
 // ADMIN SAVINGS BACKEND - Safe Fixed Version
-// Add this AFTER your existing code, don't replace everything
-// ============================================
 
 // Enable error reporting temporarily to see what's wrong
 error_reporting(E_ALL);

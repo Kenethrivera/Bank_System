@@ -28,6 +28,18 @@ $userEmail = $user['Email'];
 $userPhone = $user['Phone'];
 $totalBalance = $user['Balance'];
 $mainAccountNumber = "ACC-" . str_pad($userId, 10, "0", STR_PAD_LEFT);
+// =============================================================
+// 3. SECURITY CHECK
+// =============================================================
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login.php");
+    exit;
+}
+
+$conn = mysqli_connect('localhost', 'root', '', 'bank_db');
+
+// *** ADD THIS LINE HERE ***
+$userId = $_SESSION['user_id'];
 
 // ================================
 // FETCH TRANSACTIONS

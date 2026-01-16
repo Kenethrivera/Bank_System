@@ -686,6 +686,9 @@ document.querySelectorAll('.view-loan-btn').forEach(button => {
     });
 });
 
+// ==========================================
+// CASH OUT VALIDATION AND FORM HANDLING
+// ==========================================
 document.addEventListener('DOMContentLoaded', function () {
     const methodCards = document.querySelectorAll('.cashout-method-card');
     const selectedMethodDisplay = document.getElementById('selectedMethodDisplay');
@@ -698,72 +701,88 @@ document.addEventListener('DOMContentLoaded', function () {
     const cashOutWarning = document.getElementById('cashOutWarning');
     const confirmCashOutBtn = document.getElementById('confirmCashOutBtn');
 
+
     let selectedMethod = '';
 
+
     // Handle method selection
-    methodCards.forEach(card => {
-        card.addEventListener('click', function () {
-            // Remove selected class from all cards
-            methodCards.forEach(c => c.classList.remove('selected'));
+    if (methodCards) {
+        methodCards.forEach(card => {
+            card.addEventListener('click', function () {
+                // Remove selected class from all cards
+                methodCards.forEach(c => c.classList.remove('selected'));
 
-            // Add selected class to clicked card
-            this.classList.add('selected');
 
-            // Get method data
-            const method = this.dataset.method;
-            const description = this.dataset.description;
-            const icon = this.dataset.icon;
+                // Add selected class to clicked card
+                this.classList.add('selected');
 
-            // Set hidden inputs
-            document.getElementById('cashOutMethod').value = method;
-            document.getElementById('cashOutDescription').value = description;
-            document.getElementById('cashOutIcon').value = icon;
 
-            // Show selected method
-            selectedMethodDisplay.style.display = 'block';
-            displayMethod.textContent = method;
+                // Get method data
+                const method = this.dataset.method;
+                const description = this.dataset.description;
+                const icon = this.dataset.icon;
 
-            // Hide all option divs
-            counterOptions.style.display = 'none';
-            machineOptions.style.display = 'none';
-            storeOptions.style.display = 'none';
 
-            // Clear previous selections and warnings
-            document.getElementById('counterLocation').value = '';
-            document.getElementById('machineType').value = '';
-            document.getElementById('storeCellphone').value = '';
-            document.getElementById('cellphoneWarning').style.display = 'none';
-            document.getElementById('cellphoneWarning').textContent = '';
+                // Set hidden inputs
+                document.getElementById('cashOutMethod').value = method;
+                document.getElementById('cashOutDescription').value = description;
+                document.getElementById('cashOutIcon').value = icon;
 
-            // Show relevant options
-            if (method === 'Over the Counter') {
-                counterOptions.style.display = 'block';
-            } else if (method === 'Cash Machine') {
-                machineOptions.style.display = 'block';
-            } else if (method === 'Sari-Sari Store') {
-                storeOptions.style.display = 'block';
-            }
 
-            selectedMethod = method;
+                // Show selected method
+                selectedMethodDisplay.style.display = 'block';
+                displayMethod.textContent = method;
+
+
+                // Hide all option divs
+                counterOptions.style.display = 'none';
+                machineOptions.style.display = 'none';
+                storeOptions.style.display = 'none';
+
+
+                // Clear previous selections and warnings
+                document.getElementById('counterLocation').value = '';
+                document.getElementById('machineType').value = '';
+                document.getElementById('storeCellphone').value = '';
+                document.getElementById('cellphoneWarning').style.display = 'none';
+                document.getElementById('cellphoneWarning').textContent = '';
+
+
+                // Show relevant options
+                if (method === 'Over the Counter') {
+                    counterOptions.style.display = 'block';
+                } else if (method === 'Cash Machine') {
+                    machineOptions.style.display = 'block';
+                } else if (method === 'Sari-Sari Store') {
+                    storeOptions.style.display = 'block';
+                }
+
+
+                selectedMethod = method;
+            });
         });
-    });
+    }
+
 
     // Validate amount on input
-    cashOutAmount.addEventListener('input', function () {
-        const amount = parseFloat(this.value);
-        if (isNaN(amount) || amount <= 0) {
-            cashOutWarning.style.display = 'block';
-            cashOutWarning.textContent = 'Amount must be greater than 0';
-            confirmCashOutBtn.disabled = true;
-        } else if (amount > availableBalance) {
-            cashOutWarning.style.display = 'block';
-            cashOutWarning.textContent = 'Insufficient balance!';
-            confirmCashOutBtn.disabled = true;
-        } else {
-            cashOutWarning.style.display = 'none';
-            confirmCashOutBtn.disabled = false;
-        }
-    });
+    if (cashOutAmount) {
+        cashOutAmount.addEventListener('input', function () {
+            const amount = parseFloat(this.value);
+            if (isNaN(amount) || amount <= 0) {
+                cashOutWarning.style.display = 'block';
+                cashOutWarning.textContent = 'Amount must be greater than 0';
+                confirmCashOutBtn.disabled = true;
+            } else if (amount > availableBalance) {
+                cashOutWarning.style.display = 'block';
+                cashOutWarning.textContent = 'Insufficient balance!';
+                confirmCashOutBtn.disabled = true;
+            } else {
+                cashOutWarning.style.display = 'none';
+                confirmCashOutBtn.disabled = false;
+            }
+        });
+    }
+
 
     // Validate cellphone for Sari-Sari Store
     const storeCellphone = document.getElementById('storeCellphone');
@@ -776,17 +795,21 @@ document.addEventListener('DOMContentLoaded', function () {
             confirmCashOutBtn.disabled = false;
         });
 
+
         storeCellphone.addEventListener('blur', async function () {
             const cellphone = this.value.trim();
             const warningDiv = document.getElementById('cellphoneWarning');
+
 
             // Clear previous warnings
             warningDiv.style.display = 'none';
             warningDiv.textContent = '';
 
+
             if (!cellphone) {
                 return;
             }
+
 
             // Basic format validation
             if (cellphone.length !== 11 || !cellphone.startsWith('09')) {
@@ -796,15 +819,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+
             // Show validating message
             warningDiv.style.display = 'block';
             warningDiv.className = 'text-info mt-1';
             warningDiv.textContent = 'Validating cellphone number...';
 
+
             // Validate cellphone via AJAX
             try {
                 const response = await fetch('php/validate_cellphone.php?cellphone=' + encodeURIComponent(cellphone));
                 const data = await response.json();
+
 
                 if (!data.success) {
                     warningDiv.className = 'text-danger mt-1';
@@ -827,101 +853,284 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+
     // Form submission validation
-    cashOutForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
+    if (cashOutForm) {
+        cashOutForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
 
-        // Check if method is selected
-        if (!selectedMethod) {
-            showModal('cashOutWarningModal', 'Please select a cash out method first!');
-            return;
-        }
 
-        // Check amount
-        const amount = parseFloat(cashOutAmount.value);
-        if (!amount || amount <= 0) {
-            showModal('cashOutWarningModal', 'Please enter a valid amount!');
-            return;
-        }
-
-        if (amount > availableBalance) {
-            showModal('cashOutWarningModal', 'Insufficient balance! Available: ₱' + availableBalance.toFixed(2));
-            return;
-        }
-
-        // Validate specific options
-        if (selectedMethod === 'Over the Counter') {
-            const location = document.getElementById('counterLocation').value;
-            if (!location) {
-                showModal('cashOutWarningModal', 'Please select a counter location!');
-                return;
-            }
-        } else if (selectedMethod === 'Cash Machine') {
-            const machine = document.getElementById('machineType').value;
-            if (!machine) {
-                showModal('cashOutWarningModal', 'Please select a machine type!');
-                return;
-            }
-        } else if (selectedMethod === 'Sari-Sari Store') {
-            const cellphone = storeCellphone.value.trim();
-            if (!cellphone) {
-                showModal('cashOutWarningModal', 'Please enter store cellphone number!');
-                return;
-            }
-            if (cellphone.length !== 11 || !cellphone.startsWith('09')) {
-                showModal('cashOutWarningModal', 'Invalid cellphone format! Use: 09XXXXXXXXX');
+            // Check if method is selected
+            if (!selectedMethod) {
+                showCashOutModal('cashOutWarningModal', 'Please select a cash out method first!');
                 return;
             }
 
-            const warningDiv = document.getElementById('cellphoneWarning');
-            // Check if there's an error (not a success message)
-            if (warningDiv.style.display !== 'none' && warningDiv.className.includes('text-danger')) {
-                showModal('cashOutWarningModal', warningDiv.textContent);
+
+            // Check amount
+            const amount = parseFloat(cashOutAmount.value);
+            if (!amount || amount <= 0) {
+                showCashOutModal('cashOutWarningModal', 'Please enter a valid amount!');
                 return;
             }
 
-            // Re-validate cellphone before submitting
-            try {
-                const response = await fetch('php/validate_cellphone.php?cellphone=' + encodeURIComponent(cellphone));
-                const data = await response.json();
 
-                if (!data.success) {
-                    showModal('cashOutWarningModal', data.message || 'Invalid cellphone number');
+            if (amount > availableBalance) {
+                showCashOutModal('cashOutWarningModal', 'Insufficient balance! Available: ₱' + availableBalance.toFixed(2));
+                return;
+            }
+
+
+            // Validate specific options
+            if (selectedMethod === 'Over the Counter') {
+                const location = document.getElementById('counterLocation').value;
+                if (!location) {
+                    showCashOutModal('cashOutWarningModal', 'Please select a counter location!');
                     return;
                 }
-            } catch (error) {
-                showModal('cashOutErrorModal', 'Error validating cellphone number');
-                return;
+            } else if (selectedMethod === 'Cash Machine') {
+                const machine = document.getElementById('machineType').value;
+                if (!machine) {
+                    showCashOutModal('cashOutWarningModal', 'Please select a machine type!');
+                    return;
+                }
+            } else if (selectedMethod === 'Sari-Sari Store') {
+                const cellphone = storeCellphone.value.trim();
+                if (!cellphone) {
+                    showCashOutModal('cashOutWarningModal', 'Please enter store cellphone number!');
+                    return;
+                }
+                if (cellphone.length !== 11 || !cellphone.startsWith('09')) {
+                    showCashOutModal('cashOutWarningModal', 'Invalid cellphone format! Use: 09XXXXXXXXX');
+                    return;
+                }
+
+
+                const warningDiv = document.getElementById('cellphoneWarning');
+                // Check if there's an error (not a success message)
+                if (warningDiv.style.display !== 'none' && warningDiv.className.includes('text-danger')) {
+                    showCashOutModal('cashOutWarningModal', warningDiv.textContent);
+                    return;
+                }
+
+
+                // Re-validate cellphone before submitting
+                try {
+                    const response = await fetch('php/validate_cellphone.php?cellphone=' + encodeURIComponent(cellphone));
+                    const data = await response.json();
+
+
+                    if (!data.success) {
+                        showCashOutModal('cashOutWarningModal', data.message || 'Invalid cellphone number');
+                        return;
+                    }
+                } catch (error) {
+                    showCashOutModal('cashOutErrorModal', 'Error validating cellphone number');
+                    return;
+                }
             }
-        }
 
-        // If all validations pass, submit the form
-        this.submit();
-    });
 
-    function showModal(modalId, message) {
+            // If all validations pass, submit the form
+            this.submit();
+        });
+    }
+
+
+    function showCashOutModal(modalId, message) {
         const messageElement = modalId === 'cashOutWarningModal'
             ? document.getElementById('cashOutWarningMessage')
             : document.getElementById('cashOutErrorMessage');
 
-        messageElement.textContent = message;
-        const modal = new bootstrap.Modal(document.getElementById(modalId));
-        modal.show();
+
+        if (messageElement) {
+            messageElement.textContent = message;
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
+        }
     }
+
 
     // Reset form when modal is closed
     const cashOutModal = document.getElementById('cashOutModal');
-    cashOutModal.addEventListener('hidden.bs.modal', function () {
-        methodCards.forEach(c => c.classList.remove('selected'));
-        selectedMethodDisplay.style.display = 'none';
-        counterOptions.style.display = 'none';
-        machineOptions.style.display = 'none';
-        storeOptions.style.display = 'none';
-        cashOutForm.reset();
-        cashOutWarning.style.display = 'none';
-        document.getElementById('cellphoneWarning').style.display = 'none';
-        document.getElementById('cellphoneWarning').textContent = '';
-        selectedMethod = '';
-        confirmCashOutBtn.disabled = false;
-    });
+    if (cashOutModal) {
+        cashOutModal.addEventListener('hidden.bs.modal', function () {
+            methodCards.forEach(c => c.classList.remove('selected'));
+            selectedMethodDisplay.style.display = 'none';
+            counterOptions.style.display = 'none';
+            machineOptions.style.display = 'none';
+            storeOptions.style.display = 'none';
+            cashOutForm.reset();
+            cashOutWarning.style.display = 'none';
+            document.getElementById('cellphoneWarning').style.display = 'none';
+            document.getElementById('cellphoneWarning').textContent = '';
+            selectedMethod = '';
+            confirmCashOutBtn.disabled = false;
+        });
+    }
 });
+
+
+// ==========================================
+// SEND MONEY VALIDATION
+// ==========================================
+document.addEventListener('DOMContentLoaded', function () {
+    const sendForm = document.getElementById('sendMoneyForm');
+    const sendAmountInput = document.getElementById('sendAmount');
+    const recipientInput = document.getElementById('recipientNumber');
+    const warningDivSend = document.getElementById('sendMoneyWarning');
+    const nextBtn = document.getElementById('sendMoneyNext');
+    const confirmAmountSpan = document.getElementById('confirmSendAmount');
+    const confirmRecipientSpan = document.getElementById('confirmRecipient');
+
+
+    if (recipientInput) {
+        // Create warning div if it doesn't exist
+        let recipientWarning = document.getElementById('recipientWarning');
+        if (!recipientWarning) {
+            recipientWarning = document.createElement('div');
+            recipientWarning.id = 'recipientWarning';
+            recipientWarning.className = 'text-danger mt-1';
+            recipientWarning.style.display = 'none';
+            recipientInput.parentNode.appendChild(recipientWarning);
+        }
+
+
+        // Clear warning on input
+        recipientInput.addEventListener('input', function () {
+            recipientWarning.style.display = 'none';
+            recipientWarning.textContent = '';
+        });
+
+
+        // Validate on blur (when user leaves the field)
+        recipientInput.addEventListener('blur', async function () {
+            const cellphone = this.value.trim();
+
+
+            // Clear previous warnings
+            recipientWarning.style.display = 'none';
+            recipientWarning.textContent = '';
+
+
+            if (!cellphone) {
+                return;
+            }
+
+
+            // Basic format validation
+            if (cellphone.length !== 11 || !cellphone.startsWith('09')) {
+                recipientWarning.style.display = 'block';
+                recipientWarning.className = 'text-danger mt-1';
+                recipientWarning.textContent = 'Invalid format. Use: 09XXXXXXXXX';
+                return;
+            }
+
+
+            // Show validating message
+            recipientWarning.style.display = 'block';
+            recipientWarning.className = 'text-info mt-1';
+            recipientWarning.textContent = 'Validating recipient...';
+
+
+            // Validate cellphone via AJAX (reusing the same endpoint!)
+            try {
+                const response = await fetch('php/validate_cellphone.php?cellphone=' + encodeURIComponent(cellphone));
+                const data = await response.json();
+
+
+                if (!data.success) {
+                    recipientWarning.className = 'text-danger mt-1';
+                    recipientWarning.style.display = 'block';
+                    recipientWarning.textContent = data.message || 'Invalid recipient number';
+                } else {
+                    recipientWarning.className = 'text-success mt-1';
+                    recipientWarning.style.display = 'block';
+                    recipientWarning.textContent = '✓ ' + data.message;
+                }
+            } catch (error) {
+                console.error('Validation error:', error);
+                recipientWarning.className = 'text-danger mt-1';
+                recipientWarning.style.display = 'block';
+                recipientWarning.textContent = 'Error validating recipient number';
+            }
+        });
+    }
+
+
+    // Update the existing sendMoneyNext button click handler
+    if (nextBtn) {
+        nextBtn.addEventListener('click', async function () {
+            const amount = parseFloat(sendAmountInput.value) || 0;
+            const recipient = recipientInput.value.trim();
+            const recipientWarning = document.getElementById('recipientWarning');
+
+
+            if (!recipient) {
+                warningDivSend.textContent = "Please enter recipient's cellphone number.";
+                warningDivSend.style.display = 'block';
+                return;
+            }
+
+
+            // Check if there's an error (not a success message)
+            if (recipientWarning && recipientWarning.style.display !== 'none' && recipientWarning.className.includes('text-danger')) {
+                warningDivSend.textContent = recipientWarning.textContent;
+                warningDivSend.style.display = 'block';
+                return;
+            }
+
+
+            if (amount <= 0) {
+                warningDivSend.textContent = "Enter a valid amount.";
+                warningDivSend.style.display = 'block';
+                return;
+            }
+
+
+            if (amount > balanceDisplay) {
+                warningDivSend.textContent = `Amount cannot be greater than available balance (₱${balanceDisplay.toFixed(2)})`;
+                warningDivSend.style.display = 'block';
+                return;
+            }
+
+
+            // Re-validate before showing confirmation
+            try {
+                const response = await fetch('php/validate_cellphone.php?cellphone=' + encodeURIComponent(recipient));
+                const data = await response.json();
+
+
+                if (!data.success) {
+                    warningDivSend.textContent = data.message || 'Invalid recipient number';
+                    warningDivSend.style.display = 'block';
+                    return;
+                }
+            } catch (error) {
+                warningDivSend.textContent = 'Error validating recipient';
+                warningDivSend.style.display = 'block';
+                return;
+            }
+
+
+            warningDivSend.style.display = 'none';
+
+
+            confirmAmountSpan.textContent = `₱${amount.toFixed(2)}`;
+            confirmRecipientSpan.textContent = maskRecipient(recipient);
+
+
+            const confirmModal = new bootstrap.Modal(document.getElementById('sendMoneyConfirmModal'));
+            confirmModal.show();
+        });
+    }
+});
+
+
+function maskRecipient(number) {
+    // Mask all digits except last 4
+    if (number.length <= 4) return "****";
+    let masked = number.slice(0, number.length - 4).replace(/\d/g, "*");
+    return masked + number.slice(-4);
+}
+

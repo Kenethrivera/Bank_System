@@ -110,7 +110,7 @@ if (isset($_GET['logout'])) {
                         </div>
                         <div>
                             <small class="text-muted d-block">Email Support</small>
-                            <span class="fw-bold">support@bangisbank.com</span>
+                            <span class="fw-bold">support@bydbank.com</span>
                         </div>
                     </div>
 
@@ -120,7 +120,7 @@ if (isset($_GET['logout'])) {
                         </div>
                         <div>
                             <small class="text-muted d-block">Hotline (24/7)</small>
-                            <span class="fw-bold">1-800-BANGIS-HELP</span>
+                            <span class="fw-bold">1-800-BYDBank-HELP</span>
                         </div>
                     </div>
 
